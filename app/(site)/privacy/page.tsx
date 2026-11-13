@@ -18,7 +18,7 @@ export default function Privacy() {
       <ul>
         <li><strong>Visitors</strong> to this website.</li>
         <li><strong>Clients</strong>: brands and their staff who engage our services.</li>
-        <li><strong>Creators</strong>: people who sign in to the platform to create tracking links for a client&apos;s campaign.</li>
+        <li><strong>Creators</strong>: people who sign in to the platform to create tracking links for a client&apos;s products.</li>
       </ul>
 
       <h2>2. What we collect</h2>
@@ -27,9 +27,9 @@ export default function Privacy() {
       <h3>Creators and client users</h3>
       <ul>
         <li>Your Discord user ID, username, display name and avatar, provided by Discord when you sign in. We do not receive your Discord password, email or messages.</li>
-        <li>The tracking links you create, the placement you choose for each, any notes you add, and when you created them.</li>
+        <li>The tracking links you create, the platform, account name and placement you choose for each, any notes you add, and when you created them.</li>
         <li>Performance data for those links from Amazon Attribution: clicks, detail page views, add to carts, purchases, units and sales. This is aggregate data about shoppers&apos; actions; we do not receive the identity of any shopper.</li>
-        <li>Your role on the platform (manager or creator) and which brands you are assigned to.</li>
+        <li>Your role on the platform (owner, team or creator) and which products you have joined.</li>
       </ul>
       <h3>Clients</h3>
       <ul>
@@ -48,7 +48,7 @@ export default function Privacy() {
 
       <h2>4. Who we share it with</h2>
       <ul>
-        <li><strong>Clients.</strong> Managers at a client brand can see the names, links and sales figures of creators working on that brand&apos;s campaigns. Creators cannot see other creators&apos; data.</li>
+        <li><strong>Clients.</strong> Managers at a client brand can see the names, links and sales figures of creators working on that brand&apos;s products. Creators cannot see other creators&apos; data.</li>
         <li><strong>Amazon.</strong> Attribution tags are created in Amazon Ads. Amazon&apos;s own privacy notice governs what Amazon collects from shoppers. We receive only aggregate reports back.</li>
         <li><strong>Service providers.</strong> Supabase (database and authentication), Vercel (hosting), Discord (sign in). Each processes data on our instructions.</li>
         <li>Authorities, where required by law.</li>
@@ -59,7 +59,7 @@ export default function Privacy() {
       <p>We are based in the United Arab Emirates and our service providers operate in the United States and the European Union. Where we transfer data of UK or EU residents, we rely on standard contractual clauses or the providers&apos; equivalent safeguards.</p>
 
       <h2>6. Retention</h2>
-      <p>Platform accounts and link data are kept while the relevant campaign is active and for up to 24 months afterwards for reporting and payment reconciliation, then deleted or anonymised. Client correspondence is kept for the duration of the relationship plus the period required for accounting and legal purposes. You can ask us to delete your creator account at any time.</p>
+      <p>Platform accounts and link data are kept while the relevant product is active and for up to 24 months afterwards for reporting and payment reconciliation, then deleted or anonymised. Client correspondence is kept for the duration of the relationship plus the period required for accounting and legal purposes. You can ask us to delete your creator account at any time.</p>
 
       <h2>7. Your rights</h2>
       <p>Depending on where you live, you may have the right to access, correct, delete or restrict the use of your personal data, to object to processing, and to data portability. Email {SITE.email} and we will respond within one month. UK and EU residents may also complain to their supervisory authority.</p>

@@ -1,31 +1,31 @@
 export function DashboardMock() {
   const creators = [
-    { name: "Arn", share: 80.5, sales: "$4,947.10", c: "bg-accent" },
-    { name: "Nahomy", share: 12.3, sales: "$758.20", c: "bg-violet" },
-    { name: "Mazi", share: 5.1, sales: "$311.94", c: "bg-amber" },
+    { name: "Nora", share: 80.5, sales: "$4,947.10", c: "bg-accent" },
+    { name: "Kai", share: 12.3, sales: "$758.20", c: "bg-violet" },
+    { name: "Lena", share: 5.1, sales: "$311.94", c: "bg-amber" },
     { name: "3 more", share: 2.1, sales: "$129.00", c: "bg-sky" },
   ];
   return (
     <div className="card overflow-hidden shadow-[0_30px_80px_-30px_rgba(53,208,127,0.25)]">
       <div className="flex items-center justify-between border-b border-line px-5 py-3">
         <div className="flex items-center gap-3 text-sm">
-          <span className="text-ink-3">Brand</span>
+          <span className="text-ink-3">Northwind Beauty</span>
           <span className="text-ink-3">/</span>
-          <span className="font-medium">Lash Serum US</span>
-          <span className="pill-live">Active</span>
+          <span className="font-medium">Lash Serum</span>
+          <span className="pill-muted">Example data</span>
         </div>
         <div className="hidden items-center gap-2 font-mono text-[11px] text-ink-3 sm:flex">
           <span className="rounded-md border border-line-2 px-2 py-1">All creators</span>
           <span className="rounded-md border border-line-2 px-2 py-1">This month · 1 – 9 Nov</span>
         </div>
       </div>
-      <div className="grid gap-6 p-5 md:grid-cols-[1.4fr_1fr]">
+      <div className="grid grid-cols-1 gap-6 p-5 md:grid-cols-[1.4fr_1fr]">
         <div>
           <div className="label">Total sales · this month · 9 creators</div>
           <div className="big-number mt-2 text-6xl font-extrabold md:text-7xl">
             <span className="text-ink-3">$</span>6,147<span className="text-3xl text-ink-3">.24</span>
           </div>
-          <div className="mt-2 font-mono text-xs text-ink-3">▲ 18% vs same days last month · data through 8 Nov</div>
+          <div className="mt-2 font-mono text-xs text-ink-3">Includes brand halo · data through 8 Nov</div>
           <svg viewBox="0 0 400 90" className="mt-4 h-20 w-full">
             <defs>
               <linearGradient id="g" x1="0" x2="0" y1="0" y2="1">
@@ -53,8 +53,8 @@ export function DashboardMock() {
       </div>
       <div className="border-t border-line px-5 py-4">
         <div className="mb-2 flex items-center justify-between">
-          <div className="label">By creator · total sales share</div>
-          <div className="font-mono text-[11px] text-accent">View all 9 creators →</div>
+          <div className="label">Each creator&apos;s share of sales</div>
+          <div className="font-mono text-[11px] text-ink-3">9 creators</div>
         </div>
         <div className="flex h-2 w-full overflow-hidden rounded-full bg-line">
           {creators.map((c) => (

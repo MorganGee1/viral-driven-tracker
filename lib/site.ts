@@ -10,5 +10,5 @@ export const SITE = {
   email: "morgan@viraldrivenmedia.com",
   parentSite: "https://viraldrivenmedia.com",
   calendly: "https://calendly.com/morgan-viraldrivenmedia/15-min-discovery-call",
-  updated: "9 November 2026",
+  updated: "14 November 2026",
 };

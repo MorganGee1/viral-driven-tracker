@@ -18,7 +18,7 @@ export function ContactForm() {
 
   return (
     <form onSubmit={submit} className="card space-y-4 p-6">
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className="label mb-1.5 block">Your name</label>
           <input required className="input" value={f.name} onChange={set("name")} />
@@ -28,7 +28,7 @@ export function ContactForm() {
           <input required type="email" className="input" value={f.email} onChange={set("email")} />
         </div>
       </div>
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="sm:col-span-1">
           <label className="label mb-1.5 block">Brand</label>
           <input className="input" value={f.brand} onChange={set("brand")} />

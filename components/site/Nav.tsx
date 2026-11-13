@@ -19,9 +19,10 @@ export function SiteNav() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
         <Logo />
         <nav className="hidden items-center gap-7 text-sm text-ink-2 md:flex">
-          <Link href="/services" className="hover:text-ink">Services</Link>
           <Link href="/#how" className="hover:text-ink">How it works</Link>
-          <Link href="/#platform" className="hover:text-ink">Platform</Link>
+          <Link href="/#platform" className="hover:text-ink">Creators and team</Link>
+          <Link href="/#amazon" className="hover:text-ink">Amazon data</Link>
+          <Link href="/services" className="hover:text-ink">Services</Link>
           <Link href="/about" className="hover:text-ink">About</Link>
           <Link href="/contact" className="hover:text-ink">Contact</Link>
         </nav>
@@ -37,7 +38,7 @@ export function SiteNav() {
 export function SiteFooter() {
   return (
     <footer className="border-t border-line">
-      <div className="mx-auto grid max-w-6xl gap-10 px-5 py-14 md:grid-cols-4">
+      <div className="mx-auto grid grid-cols-1 max-w-6xl gap-10 px-5 py-14 md:grid-cols-4">
         <div className="md:col-span-2">
           <Logo />
           <p className="mt-4 max-w-md text-sm leading-relaxed text-ink-2">
@@ -67,7 +68,7 @@ export function SiteFooter() {
           <ul className="space-y-2 text-sm text-ink-2">
             <li><Link href="/privacy" className="hover:text-ink">Privacy policy</Link></li>
             <li><Link href="/terms" className="hover:text-ink">Terms of service</Link></li>
-            <li><Link href="/login" className="hover:text-ink">Client sign in</Link></li>
+            <li><Link href="/login" className="hover:text-ink">Team and creator sign in</Link></li>
           </ul>
         </div>
       </div>

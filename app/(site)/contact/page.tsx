@@ -14,7 +14,7 @@ export default function Contact() {
       <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl">Tell us about your brand.</h1>
       <p className="mt-4 max-w-xl text-ink-2">Marketplace, product category and roughly how many creators you work with is enough to start. We reply within one working day.</p>
 
-      <div className="mt-12 grid gap-10 md:grid-cols-[1.2fr_1fr]">
+      <div className="mt-12 grid grid-cols-1 gap-10 md:grid-cols-[1.2fr_1fr]">
         <ContactForm />
         <div className="space-y-4">
           <div className="card p-5">

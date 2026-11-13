@@ -1,102 +1,114 @@
 import Link from "next/link";
-import { getMe, getBrandsWithCampaigns, getStats, monthRanges, sum, money, currencyFor, num, pct } from "@/lib/data";
-import { addBrand, addCampaign } from "@/lib/actions";
-import { createClient } from "@/lib/supabase/server";
-import { Delta } from "@/components/app/Delta";
+import { redirect } from "next/navigation";
+import { getMe, getNav, getProductTotals, getLinks } from "@/lib/data";
+import { addBrand } from "@/lib/actions";
+import { Flash } from "@/components/app/Flash";
+import { ZERO, currencyFor, isTeamRole, money, num, resolvePeriod, sumTotals } from "@/lib/util";
 
-export default async function Home() {
+export default async function Home({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string }> }) {
+  const sp = await searchParams;
   const me = (await getMe())!;
-  const { brands, campaigns } = await getBrandsWithCampaigns();
-  const isManager = me.role === "manager";
-  const r = monthRanges();
+  const team = isTeamRole(me.role);
+  const { brands, products } = await getNav();
+  const live = products.filter((p) => p.status === "active");
 
-  // links visible to this user (RLS already limits creators to their own)
-  const supabase = await createClient();
-  const { data: links } = await supabase.from("links").select("id, campaign_id");
-  const linkIds = (links ?? []).map((l) => l.id);
-  const [cur, prev] = await Promise.all([getStats(linkIds, r.from, r.to), getStats(linkIds, r.prevFrom, r.prevTo)]);
-  const byCampaign = new Map<string, string[]>();
-  for (const l of links ?? []) byCampaign.set(l.campaign_id, [...(byCampaign.get(l.campaign_id) ?? []), l.id]);
+  // A creator in one product goes straight to it.
+  if (!team && live.length === 1 && !sp.ok && !sp.error) redirect(`/app/products/${live[0].id}`);
+
+  const month = resolvePeriod({});
+  const totals = await getProductTotals(month.from, month.to);
+  const first = me.username.split(" ")[0];
+
+  if (!team) {
+    const myLinks = await getLinks({});
+    return (
+      <div className="mx-auto max-w-4xl">
+        <Flash ok={sp.ok} error={sp.error} />
+        <div className="label">Your products · this month</div>
+        <h1 className="mt-1 text-3xl font-bold tracking-tight">Hi {first}.</h1>
+        {live.length === 0 ? (
+          <div className="card mt-8 p-8">
+            <h2 className="text-xl font-semibold">You are signed in. One step left.</h2>
+            <p className="mt-2 text-sm leading-relaxed text-ink-2">
+              You have not joined a product yet. Open the invite link your manager sent you and you will land on the product, ready to make your links.
+              No link? Ask them for one in Discord.
+            </p>
+          </div>
+        ) : (
+          <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {live.map((p) => {
+              const b = brands.find((x) => x.id === p.brand_id);
+              const t = totals.get(p.id) ?? ZERO;
+              const count = myLinks.filter((l) => l.product_id === p.id && !l.archived_at).length;
+              return (
+                <Link key={p.id} href={`/app/products/${p.id}`} className="card p-5 transition hover:border-line-2">
+                  <div className="label">{b?.name}</div>
+                  <div className="mt-1 truncate text-lg font-semibold">{p.name}</div>
+                  <div className="big-number mt-3 text-3xl font-bold">{money(t.sales, currencyFor(b?.marketplace ?? "US"))}</div>
+                  <div className="mt-2 font-mono text-[11px] text-ink-3">
+                    <span className="text-ink">{num(t.purchases)}</span> sales · <span className="text-ink">{num(t.clicks)}</span> clicks · <span className="text-ink">{count}</span> {count === 1 ? "link" : "links"}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-6xl">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <div className="label">{isManager ? "All brands" : "Your campaigns"} · this month · {r.label}</div>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight">Hi {me.username.split(" ")[0]}.</h1>
-        </div>
-      </div>
+      <Flash ok={sp.ok} error={sp.error} />
+      <div className="label">All brands · this month</div>
+      <h1 className="mt-1 text-3xl font-bold tracking-tight">Hi {first}.</h1>
 
       {brands.length === 0 && (
-        <div className="card mt-8 p-8 text-center">
-          <h2 className="text-xl font-semibold">{isManager ? "Add your first brand" : "No campaigns yet"}</h2>
-          <p className="mt-2 text-sm text-ink-2">{isManager ? "A brand holds campaigns. A campaign is one Amazon product URL that creators make links for." : "Your manager hasn't set up a campaign yet. Check back soon."}</p>
+        <div className="card mt-8 p-8">
+          <h2 className="text-xl font-semibold">Set up your first brand</h2>
+          <ol className="mt-4 space-y-2 text-sm leading-relaxed text-ink-2">
+            <li><span className="font-mono text-accent">1</span> &nbsp;Add a brand below.</li>
+            <li><span className="font-mono text-accent">2</span> &nbsp;Add a product under it, with the Amazon page its links point to.</li>
+            <li><span className="font-mono text-accent">3</span> &nbsp;Create an invite link for the product and send it to your creators.</li>
+            <li><span className="font-mono text-accent">4</span> &nbsp;Creators sign in with Discord and make their own links. Sales show up per creator, account and placement.</li>
+          </ol>
         </div>
       )}
 
-      <div className="mt-8 space-y-10">
+      <div className="mt-8 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
         {brands.map((b) => {
-          const cs = campaigns.filter((c) => c.brand_id === b.id);
-          const cur_ = currencyFor(b.marketplace);
+          const ps = products.filter((p) => p.brand_id === b.id);
+          const t = sumTotals(ps.map((p) => totals.get(p.id) ?? ZERO));
+          const liveCount = ps.filter((p) => p.status === "active").length;
           return (
-            <section key={b.id}>
-              <div className="mb-3 flex items-center justify-between">
-                <Link href={`/app/brands/${b.id}`} className="text-lg font-semibold hover:text-accent">{b.name} <span className="ml-2 font-mono text-xs text-ink-3">{b.marketplace}</span></Link>
+            <Link key={b.id} href={`/app/brands/${b.id}`} className="card p-5 transition hover:border-line-2">
+              <div className="flex items-center justify-between">
+                <div className="truncate text-lg font-semibold">{b.name}</div>
+                <span className="pill-muted">{b.marketplace}</span>
               </div>
-              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                {cs.map((c) => {
-                  const ids = byCampaign.get(c.id) ?? [];
-                  const t = sum(cur.filter((s) => ids.includes(s.link_id)));
-                  const p = sum(prev.filter((s) => ids.includes(s.link_id)));
-                  return (
-                    <Link key={c.id} href={`/app/campaigns/${c.id}`} className="card p-5 transition hover:border-line-2">
-                      <div className="flex items-center justify-between">
-                        <div className="truncate font-medium">{c.name}</div>
-                        <span className={c.status === "active" ? "pill-live" : "pill-muted"}>{c.status}</span>
-                      </div>
-                      <div className="big-number mt-3 text-3xl font-bold">{money(t.sales, cur_)}</div>
-                      <div className="mt-1 flex items-center gap-2 font-mono text-[11px] text-ink-3">
-                        <Delta value={pct(t.sales, p.sales)} /> vs same days last month
-                      </div>
-                      <div className="mt-3 grid grid-cols-3 gap-2 font-mono text-[11px] text-ink-3">
-                        <div><span className="text-ink">{num(t.purchases)}</span> purchases</div>
-                        <div><span className="text-ink">{num(t.clicks)}</span> clicks</div>
-                        <div><span className="text-ink">{ids.length}</span> links</div>
-                      </div>
-                    </Link>
-                  );
-                })}
-                {cs.length === 0 && <div className="card p-5 font-mono text-xs text-ink-3">No campaigns in this brand yet.</div>}
+              <div className="big-number mt-3 text-3xl font-bold">{money(t.sales, currencyFor(b.marketplace))}</div>
+              <div className="mt-2 font-mono text-[11px] text-ink-3">
+                <span className="text-ink">{num(t.purchases)}</span> purchases · <span className="text-ink">{num(t.clicks)}</span> clicks · <span className="text-ink">{liveCount}</span> {liveCount === 1 ? "product" : "products"}
               </div>
-            </section>
+            </Link>
           );
         })}
       </div>
 
-      {isManager && (
-        <div className="mt-12 grid gap-4 md:grid-cols-2">
-          <form action={addBrand} className="card space-y-3 p-5">
-            <div className="label">Add a brand</div>
-            <input name="name" required placeholder="Brand name" className="input" />
-            <select name="marketplace" className="select" defaultValue="US">
-              <option value="US">US · amazon.com</option>
-              <option value="UK">UK · amazon.co.uk</option>
-              <option value="DE">DE · amazon.de</option>
-              <option value="CA">CA · amazon.ca</option>
-            </select>
-            <button className="btn-primary w-full">Add brand</button>
-          </form>
-          <form action={addCampaign} className="card space-y-3 p-5">
-            <div className="label">Add a campaign</div>
-            <select name="brand_id" required className="select" disabled={brands.length === 0}>
-              {brands.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-            </select>
-            <input name="name" required placeholder="Campaign name, e.g. Hip & Joint Chews" className="input" />
-            <input name="product_url" required placeholder="Amazon product URL, e.g. https://www.amazon.com/dp/B0XXXXXXX" className="input" />
-            <button className="btn-primary w-full" disabled={brands.length === 0}>Add campaign</button>
-          </form>
-        </div>
-      )}
+      <form action={addBrand} className="card mt-10 max-w-md space-y-3 p-5">
+        <div className="label">Add a brand</div>
+        <input name="name" required maxLength={80} placeholder="Brand name" className="input" />
+        <select name="marketplace" className="select" defaultValue="US" aria-label="Amazon marketplace">
+          <option value="US">US · amazon.com</option>
+          <option value="UK">UK · amazon.co.uk</option>
+          <option value="CA">CA · amazon.ca</option>
+          <option value="DE">DE · amazon.de</option>
+          <option value="FR">FR · amazon.fr</option>
+          <option value="IT">IT · amazon.it</option>
+          <option value="ES">ES · amazon.es</option>
+        </select>
+        <button className="btn-primary w-full">Add brand</button>
+      </form>
     </div>
   );
 }

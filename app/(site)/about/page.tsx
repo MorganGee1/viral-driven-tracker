@@ -13,7 +13,7 @@ export default function About() {
       <div className="label mb-3">About us</div>
       <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl">The company behind {SITE.name}.</h1>
 
-      <div className="mt-10 grid gap-10 md:grid-cols-[1.4fr_1fr]">
+      <div className="mt-10 grid grid-cols-1 gap-10 md:grid-cols-[1.4fr_1fr]">
         <div className="space-y-5 text-ink-2 leading-relaxed">
           <p>
             <strong className="text-ink">{SITE.name}</strong> is a product and service of <strong className="text-ink">{SITE.company}</strong>, a company registered in a Dubai free zone, United Arab Emirates, and trading as {SITE.tradeName}.

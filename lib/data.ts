@@ -1,109 +1,187 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { type Placement, type Platform, type Role, type Totals, ZERO } from "@/lib/util";
 
-export type Profile = { id: string; username: string; avatar_url: string | null; role: "manager" | "creator" };
-export type Brand = { id: string; name: string; marketplace: string };
-export type Campaign = { id: string; brand_id: string; name: string; product_url: string; status: string };
+export type Profile = {
+  id: string; username: string; discord_username: string | null; discord_id: string | null;
+  avatar_url: string | null; role: Role; created_at: string;
+};
+export type Brand = { id: string; name: string; marketplace: string; tag_template: string | null };
+export type Product = { id: string; brand_id: string; name: string; status: "active" | "archived"; created_at: string };
+export type AmazonPage = { id: string; product_id: string; name: string; url: string; archived_at: string | null };
 export type Link = {
-  id: string; campaign_id: string; owner_id: string; placement: "bio" | "comment" | "manychat" | "other";
-  note: string | null; amazon_tag: string | null; created_at: string;
+  id: string; short_id: string; product_id: string; page_id: string; owner_id: string;
+  platform: Platform; account: string; placement: Placement; name: string; note: string | null;
+  amazon_tag: string | null; archived_at: string | null; created_at: string;
 };
-export type Stat = {
-  link_id: string; day: string; clicks: number; detail_page_views: number; add_to_carts: number;
-  purchases: number; units: number; sales: number; referral_bonus: number;
+export type Invite = {
+  id: string; code: string; name: string; role: "creator" | "team"; product_id: string | null;
+  active: boolean; expires_at: string | null; max_uses: number | null; uses: number; created_at: string;
 };
+export type DayRow = Totals & { day: string };
 
-export const PLACEMENTS: Record<Link["placement"], string> = {
-  bio: "Bio link", comment: "Pinned comment", manychat: "ManyChat", other: "Other",
-};
+const PROFILE_COLS = "id, username, discord_username, discord_id, avatar_url, role, created_at";
+const LINK_COLS = "id, short_id, product_id, page_id, owner_id, platform, account, placement, name, note, amazon_tag, archived_at, created_at";
 
-export async function getMe(): Promise<Profile | null> {
+type Res<T> = { data: T[] | null; error: { message: string } | null };
+
+/** The database hands back at most 1,000 rows per request. This keeps asking until it has them all. */
+async function fetchAll<T>(page: (from: number, to: number) => PromiseLike<Res<T>>): Promise<T[]> {
+  const size = 1000;
+  const out: T[] = [];
+  for (let i = 0; ; i += size) {
+    const { data, error } = await page(i, i + size - 1);
+    if (error) throw new Error(error.message);
+    out.push(...(data ?? []));
+    if (!data || data.length < size) return out;
+  }
+}
+
+export const getMe = cache(async (): Promise<Profile | null> => {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data } = await supabase.from("profiles").select("id, username, avatar_url, role").eq("id", user.id).single();
-  return (data as Profile) ?? null;
-}
+  const { data } = await supabase.from("profiles").select(PROFILE_COLS).eq("id", user.id).maybeSingle();
+  return (data as Profile | null) ?? null;
+});
 
-export async function getBrandsWithCampaigns() {
+/** Brands and products this person is allowed to see (the database decides). */
+export const getNav = cache(async () => {
   const supabase = await createClient();
-  const [{ data: brands }, { data: campaigns }] = await Promise.all([
-    supabase.from("brands").select("id, name, marketplace").order("name"),
-    supabase.from("campaigns").select("id, brand_id, name, product_url, status").order("name"),
+  const [brands, products] = await Promise.all([
+    fetchAll<Brand>((a, b) => supabase.from("brands").select("id, name, marketplace, tag_template").order("name").order("id").range(a, b)),
+    fetchAll<Product>((a, b) => supabase.from("products").select("id, brand_id, name, status, created_at").order("name").order("id").range(a, b)),
   ]);
-  return { brands: (brands ?? []) as Brand[], campaigns: (campaigns ?? []) as Campaign[] };
+  return { brands, products };
+});
+
+export const getProduct = cache(async (id: string) => {
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const supabase = await createClient();
+  const { data: product } = await supabase.from("products").select("id, brand_id, name, status, created_at").eq("id", id).maybeSingle();
+  if (!product) return null;
+  const [{ data: brand }, { data: pages, error }] = await Promise.all([
+    supabase.from("brands").select("id, name, marketplace, tag_template").eq("id", product.brand_id).maybeSingle(),
+    supabase.from("amazon_pages").select("id, product_id, name, url, archived_at").eq("product_id", id).order("created_at"),
+  ]);
+  if (error) throw new Error(error.message);
+  if (!brand) return null;
+  return { product: product as Product, brand: brand as Brand, pages: (pages ?? []) as AmazonPage[] };
+});
+
+export async function getBrand(id: string) {
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const supabase = await createClient();
+  const { data } = await supabase.from("brands").select("id, name, marketplace, tag_template").eq("id", id).maybeSingle();
+  return (data as Brand | null) ?? null;
 }
 
-export async function getCampaign(id: string) {
+/** Every link in a product the person may see: all of them for the team, their own for a creator. */
+export async function getLinks(filter: { product?: string; brand?: string }) {
   const supabase = await createClient();
-  const { data: campaign } = await supabase.from("campaigns").select("id, brand_id, name, product_url, status").eq("id", id).single();
-  if (!campaign) return null;
-  const { data: brand } = await supabase.from("brands").select("id, name, marketplace").eq("id", campaign.brand_id).single();
-  return { campaign: campaign as Campaign, brand: brand as Brand };
-}
-
-export async function getCampaignLinks(campaignId: string) {
-  const supabase = await createClient();
-  const { data } = await supabase.from("links")
-    .select("id, campaign_id, owner_id, placement, note, amazon_tag, created_at")
-    .eq("campaign_id", campaignId).order("created_at", { ascending: false });
-  return (data ?? []) as Link[];
+  if (filter.brand) {
+    const { products } = await getNav();
+    const ids = products.filter((p) => p.brand_id === filter.brand).map((p) => p.id);
+    if (!ids.length) return [] as Link[];
+    return fetchAll<Link>((a, b) => supabase.from("links").select(LINK_COLS).in("product_id", ids).order("created_at", { ascending: false }).order("id").range(a, b));
+  }
+  return fetchAll<Link>((a, b) => {
+    let q = supabase.from("links").select(LINK_COLS);
+    if (filter.product) q = q.eq("product_id", filter.product);
+    return q.order("created_at", { ascending: false }).order("id").range(a, b);
+  });
 }
 
 export async function getProfilesByIds(ids: string[]) {
-  if (!ids.length) return new Map<string, Profile>();
+  const map = new Map<string, Profile>();
+  const unique = [...new Set(ids)];
+  if (!unique.length) return map;
   const supabase = await createClient();
-  const { data } = await supabase.from("profiles").select("id, username, avatar_url, role").in("id", ids);
-  return new Map(((data ?? []) as Profile[]).map((p) => [p.id, p]));
+  for (let i = 0; i < unique.length; i += 200) {
+    const { data, error } = await supabase.from("profiles").select(PROFILE_COLS).in("id", unique.slice(i, i + 200));
+    if (error) throw new Error(error.message);
+    for (const p of (data ?? []) as Profile[]) map.set(p.id, p);
+  }
+  return map;
 }
 
 export async function getAllProfiles() {
   const supabase = await createClient();
-  const { data } = await supabase.from("profiles").select("id, username, avatar_url, role, created_at").order("username");
-  return (data ?? []) as (Profile & { created_at: string })[];
+  return fetchAll<Profile>((a, b) => supabase.from("profiles").select(PROFILE_COLS).order("created_at").order("id").range(a, b));
 }
 
-/** Stats for a set of links, for a day range (inclusive, yyyy-mm-dd). */
-export async function getStats(linkIds: string[], from: string, to: string) {
-  if (!linkIds.length) return [] as Stat[];
+/** Creator ids who joined this product through an invite link. */
+export async function getMemberIds(productId: string) {
   const supabase = await createClient();
-  const { data } = await supabase.from("link_stats").select("*").in("link_id", linkIds).gte("day", from).lte("day", to);
-  return (data ?? []) as Stat[];
+  const rows = await fetchAll<{ creator_id: string; joined_at: string }>((a, b) =>
+    supabase.from("memberships").select("creator_id, joined_at").eq("product_id", productId).order("joined_at").order("creator_id").range(a, b));
+  return rows;
 }
 
-// ---------- period maths ----------
-export function iso(d: Date) { return d.toISOString().slice(0, 10); }
-
-export function monthRanges(now = new Date()) {
-  const y = now.getUTCFullYear(), m = now.getUTCMonth(), day = now.getUTCDate();
-  const start = new Date(Date.UTC(y, m, 1));
-  const end = new Date(Date.UTC(y, m, day));
-  const prevStart = new Date(Date.UTC(y, m - 1, 1));
-  const prevDays = new Date(Date.UTC(y, m, 0)).getUTCDate();
-  const prevEnd = new Date(Date.UTC(y, m - 1, Math.min(day, prevDays)));
-  return { from: iso(start), to: iso(end), prevFrom: iso(prevStart), prevTo: iso(prevEnd), label: `1 – ${day} ${start.toLocaleString("en-GB", { month: "short", timeZone: "UTC" })}` };
+export async function getAllMemberships() {
+  const supabase = await createClient();
+  return fetchAll<{ creator_id: string; product_id: string }>((a, b) =>
+    supabase.from("memberships").select("creator_id, product_id").order("product_id").order("creator_id").range(a, b));
 }
 
-export type Totals = { clicks: number; dpv: number; atc: number; purchases: number; units: number; sales: number; bonus: number };
-export function sum(stats: Stat[]): Totals {
-  return stats.reduce((t, s) => ({
-    clicks: t.clicks + s.clicks, dpv: t.dpv + s.detail_page_views, atc: t.atc + s.add_to_carts,
-    purchases: t.purchases + s.purchases, units: t.units + s.units, sales: t.sales + Number(s.sales), bonus: t.bonus + Number(s.referral_bonus),
-  }), { clicks: 0, dpv: 0, atc: 0, purchases: 0, units: 0, sales: 0, bonus: 0 });
+export async function getInvites(filter: { product?: string; role: "creator" | "team" }) {
+  const supabase = await createClient();
+  let q = supabase.from("invites").select("id, code, name, role, product_id, active, expires_at, max_uses, uses, created_at").eq("role", filter.role);
+  if (filter.product) q = q.eq("product_id", filter.product);
+  const { data, error } = await q.order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as Invite[];
 }
 
-export function pct(now: number, prev: number) {
-  if (!prev) return null;
-  return Math.round(((now - prev) / prev) * 100);
+// ---------- numbers ----------
+type Scope = { product?: string; brand?: string; from: string | null; to: string | null };
+type Raw = { clicks: number | string; dpv: number | string; atc: number | string; purchases: number | string; units: number | string; sales: number | string };
+const toTotals = (r: Raw): Totals => ({
+  clicks: Number(r.clicks), dpv: Number(r.dpv), atc: Number(r.atc),
+  purchases: Number(r.purchases), units: Number(r.units), sales: Number(r.sales),
+});
+
+/** Totals per link for a date range. Links with no activity are simply absent. */
+export async function getLinkTotals(scope: Scope): Promise<Map<string, Totals>> {
+  const supabase = await createClient();
+  const rows = await fetchAll<Raw & { link_id: string }>((a, b) =>
+    supabase.rpc("link_totals", { p_product: scope.product ?? null, p_brand: scope.brand ?? null, p_from: scope.from, p_to: scope.to })
+      .order("link_id").range(a, b));
+  return new Map(rows.map((r) => [r.link_id, toTotals(r)]));
 }
 
-export const money = (n: number, cur = "USD") =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency: cur, minimumFractionDigits: 2 }).format(n);
-export const num = (n: number) => new Intl.NumberFormat("en-US").format(n);
-export const currencyFor = (marketplace: string) => (marketplace === "UK" ? "GBP" : marketplace === "DE" || marketplace === "FR" ? "EUR" : "USD");
-
-/** Build the URL a creator posts. */
-export function taggedUrl(productUrl: string, tag: string | null) {
-  if (!tag) return productUrl;
-  const clean = tag.replace(/^\?/, "").trim();
-  return productUrl.includes("?") ? `${productUrl}&${clean}` : `${productUrl}?${clean}`;
+/** Totals per product for a date range, across everything the person may see. */
+export async function getProductTotals(from: string | null, to: string | null): Promise<Map<string, Totals>> {
+  const supabase = await createClient();
+  const rows = await fetchAll<Raw & { product_id: string }>((a, b) =>
+    supabase.rpc("product_totals", { p_from: from, p_to: to }).order("product_id").range(a, b));
+  return new Map(rows.map((r) => [r.product_id, toTotals(r)]));
 }
+
+/** Totals per day. Pass linkIds to narrow to a filtered set of links. */
+export async function getDailyTotals(scope: Scope, linkIds?: string[] | null): Promise<DayRow[]> {
+  if (linkIds && linkIds.length === 0) return [];
+  const supabase = await createClient();
+  const rows = await fetchAll<Raw & { day: string }>((a, b) =>
+    supabase.rpc("daily_totals", { p_product: scope.product ?? null, p_brand: scope.brand ?? null, p_from: scope.from, p_to: scope.to, p_links: linkIds ?? null })
+      .order("day").range(a, b));
+  return rows.map((r) => ({ day: r.day, ...toTotals(r) }));
+}
+
+/** Brand Referral Bonus. The database only answers this for the team. */
+export async function getBonus(scope: Scope): Promise<number> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("bonus_total", { p_product: scope.product ?? null, p_brand: scope.brand ?? null, p_from: scope.from, p_to: scope.to });
+  if (error) throw new Error(error.message);
+  return Number(data ?? 0);
+}
+
+/** Last day we hold numbers for. Amazon restates recent days, so this is shown next to every total. */
+export async function getDataThrough(scope: { product?: string; brand?: string }): Promise<string | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("data_through", { p_product: scope.product ?? null, p_brand: scope.brand ?? null });
+  if (error) throw new Error(error.message);
+  return (data as string | null) ?? null;
+}
+
+export const totalsFor = (map: Map<string, Totals>, linkId: string) => map.get(linkId) ?? ZERO;
