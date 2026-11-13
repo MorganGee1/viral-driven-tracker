@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, supabaseConfigured } from "@/lib/supabase/server";
 
 /** Signed-in person lands here from an invite link: join, then go to the right place. */
 export async function GET(request: Request, { params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
   const origin = new URL(request.url).origin;
   if (!/^[a-z0-9]{6,40}$/i.test(code)) return NextResponse.redirect(`${origin}/join/${encodeURIComponent(code)}`);
+  if (!supabaseConfigured()) return NextResponse.redirect(`${origin}/login?setup=1`);
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.redirect(`${origin}/join/${code}`);

@@ -78,3 +78,28 @@ Numbers are Amazon Attribution numbers: clicks, detail page views, add to carts,
 - Nobody can delete a link.
 
 `supabase/schema.sql` section 6 holds these rules.
+
+## Amazon Ads API (switch on after Amazon approves access)
+
+The code for this is in the repo and has been run end to end against a local stand-in for Amazon.
+**It has never run against Amazon itself**, because API access had not been approved when it was written.
+Expect a short fix-up the first time it meets real data (most likely the field names in report rows). `lib/amazon.ts` is the only file that talks to Amazon.
+
+What it does once switched on:
+- Settings > Amazon connection > **Connect Amazon Ads**. The account owner signs in with Login with Amazon and approves access.
+- The tracker finds the brand's Amazon Attribution advertiser (asks you to pick if the login sees several), fetches the tag template, and tags every link that was waiting.
+- Every new link is tagged the moment a creator makes it. Each link is its own ad group in Amazon, so sales and Brand Referral Bonus come back per link.
+- Every night (and on **Sync now**) it pulls the last 31 days and replaces those days.
+
+It calls only these: `GET /v2/profiles`, `GET /attribution/advertisers`, `GET /attribution/publishers`, `GET /attribution/tags/nonMacroTemplateTag`, `POST /attribution/report`.
+
+To switch it on:
+1. In the Login with Amazon security profile, add the allowed return URL `https://tracker.viraldrivenmedia.com/api/amazon/callback`.
+2. Add these in Vercel > Environment variables, then redeploy:
+   - `AMAZON_CLIENT_ID`, `AMAZON_CLIENT_SECRET` (from the Login with Amazon security profile)
+   - `AMAZON_TOKEN_KEY` (any long random string; it encrypts the stored Amazon token, so never change it once brands are connected)
+   - `SUPABASE_SERVICE_ROLE_KEY` (Supabase > Project Settings > API)
+   - `CRON_SECRET` (any long random string; lets Vercel run the nightly sync)
+3. Run `supabase/schema.sql` again if you have not since this was added.
+
+Until those keys exist, the Connect button does not show and everything works on report uploads.

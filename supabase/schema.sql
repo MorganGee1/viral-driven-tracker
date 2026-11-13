@@ -554,6 +554,57 @@ returns date language sql stable as $$
 $$;
 
 -- =====================================================================
+-- 9b. Amazon Ads API connection (one per brand)
+-- =====================================================================
+-- Holds the brand's Login with Amazon refresh token, encrypted by the app before it gets here.
+-- No access rules are created, so nobody signed in can read this table: only the server's own
+-- key (service role) can. The team sees the status through amazon_status() below, never the token.
+create table if not exists public.amazon_connections (
+  brand_id uuid primary key references public.brands(id) on delete cascade,
+  region text not null default 'NA' check (region in ('NA', 'EU', 'FE')),
+  refresh_token_enc text not null,
+  profile_id text,
+  advertiser_id text,
+  advertiser_name text,
+  candidates jsonb not null default '[]'::jsonb,
+  connected_by uuid references public.profiles(id) on delete set null,
+  connected_at timestamptz not null default now(),
+  last_sync_at timestamptz,
+  last_sync_status text,
+  last_sync_rows integer
+);
+alter table public.amazon_connections enable row level security;
+
+create or replace function public.amazon_status(p_brand uuid)
+returns jsonb language sql stable security definer set search_path = public as $$
+  select case when not public.is_team() then null else coalesce((
+    select jsonb_build_object(
+      'connected', true, 'region', c.region, 'advertiser_id', c.advertiser_id, 'advertiser_name', c.advertiser_name,
+      'candidates', c.candidates, 'connected_at', c.connected_at,
+      'last_sync_at', c.last_sync_at, 'last_sync_status', c.last_sync_status, 'last_sync_rows', c.last_sync_rows)
+    from public.amazon_connections c where c.brand_id = p_brand
+  ), jsonb_build_object('connected', false)) end;
+$$;
+
+-- Tags every untagged link of a brand from its tag template. Returns how many links it tagged.
+create or replace function public.apply_tag_template(p_brand uuid)
+returns integer language plpgsql security definer set search_path = public as $$
+declare tpl text; n integer;
+begin
+  if auth.uid() is not null and not public.is_team() then
+    raise exception 'Team only';
+  end if;
+  select tag_template into tpl from public.brands where id = p_brand;
+  if tpl is null then return 0; end if;
+  update public.links l set amazon_tag = public.build_tag(tpl, substr(replace(l.product_id::text, '-', ''), 1, 10), l.short_id, l.short_id)
+  from public.products p
+  where p.id = l.product_id and p.brand_id = p_brand and l.amazon_tag is null
+    and public.build_tag(tpl, 'x', 'x', 'x') is not null;
+  get diagnostics n = row_count;
+  return n;
+end $$;
+
+-- =====================================================================
 -- 10. Access for the app's database roles
 -- =====================================================================
 -- Signed-out visitors get nothing except the invite preview. Signed-in people get the
@@ -565,7 +616,7 @@ grant select, insert, update, delete on
   to authenticated, service_role;
 grant execute on function
   public.my_role(), public.is_team(), public.is_owner(), public.is_member(uuid),
-  public.redeem_invite(text),
+  public.redeem_invite(text), public.amazon_status(uuid), public.apply_tag_template(uuid),
   public.link_totals(uuid, uuid, date, date),
   public.product_totals(date, date),
   public.daily_totals(uuid, uuid, date, date, uuid[]),
@@ -573,3 +624,4 @@ grant execute on function
   public.data_through(uuid, uuid)
   to authenticated, service_role;
 grant execute on function public.invite_preview(text) to anon, authenticated, service_role;
+grant select, insert, update, delete on public.amazon_connections to service_role;

@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getMe } from "@/lib/data";
+import { type Candidate, type Region, amazonConfigured, decrypt, finishConnection, refreshAccess, syncBrand } from "@/lib/amazon";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   PLACEMENTS, PLATFORMS, cleanAmazonUrl, defaultLinkName, isTeamRole, parseCsv, toIsoDate,
   type Placement, type Platform,
@@ -83,8 +85,9 @@ export async function setTagTemplate(fd: FormData) {
   const supabase = await createClient();
   const { error } = await supabase.from("brands").update({ tag_template: tpl || null }).eq("id", id);
   if (error) fail(back, "Could not save the tag template.");
+  if (tpl) await supabase.rpc("apply_tag_template", { p_brand: id });
   revalidatePath("/app", "layout");
-  redirect(withParam(back, "ok", tpl ? "Tag template saved. New links are tagged automatically." : "Tag template removed"));
+  redirect(withParam(back, "ok", tpl ? "Tag template saved. New links are tagged automatically, and links that were waiting are tagged now." : "Tag template removed"));
 }
 
 // ---------- products and Amazon pages ----------
@@ -418,4 +421,48 @@ export async function importReport(fd: FormData): Promise<ImportResult> {
     days: minDay === maxDay ? minDay : `${minDay} to ${maxDay}`, columns: used, unmatched: [...unmatched],
     message: `${matched} of ${body.length} rows matched ${new Set(all.map((a) => a.link_id)).size} links.`,
   };
+}
+
+// ---------- Amazon Ads API connection ----------
+
+/** Several Amazon Attribution advertisers came back for the login: the team picks which one this brand is. */
+export async function pickAmazonAdvertiser(fd: FormData) {
+  await requireTeam();
+  const brandId = str(fd, "brand_id");
+  const back = backTo(fd, `/app/brands/${brandId}`);
+  if (!amazonConfigured()) fail(back, "The Amazon Ads API is not set up on this site yet.");
+  const db = createAdminClient();
+  const { data: conn } = await db.from("amazon_connections").select("region, refresh_token_enc, candidates").eq("brand_id", brandId).maybeSingle();
+  const pick = ((conn?.candidates ?? []) as Candidate[]).find((c) => c.advertiserId === str(fd, "advertiser_id"));
+  if (!conn || !pick) fail(back, "Connect the brand to Amazon first, then pick the advertiser.");
+  let message = "";
+  try {
+    await finishConnection(brandId, pick, conn.region as Region, await refreshAccess(conn.region as Region, decrypt(conn.refresh_token_enc)));
+  } catch (e) {
+    message = e instanceof Error ? e.message : "Amazon refused.";
+  }
+  if (message) fail(back, message);
+  revalidatePath("/app", "layout");
+  redirect(withParam(back, "ok", `Now using ${pick.advertiserName}. New links are tagged automatically.`));
+}
+
+export async function syncAmazon(fd: FormData) {
+  await requireTeam();
+  const brandId = str(fd, "brand_id");
+  const back = backTo(fd, `/app/brands/${brandId}`);
+  if (!amazonConfigured()) fail(back, "The Amazon Ads API is not set up on this site yet.");
+  const res = await syncBrand(brandId);
+  revalidatePath("/app", "layout");
+  redirect(withParam(back, res.ok ? "ok" : "error", res.message));
+}
+
+/** Stops the nightly pull and throws away the stored Amazon token. Links keep their tags and past numbers stay. */
+export async function disconnectAmazon(fd: FormData) {
+  await requireTeam();
+  const brandId = str(fd, "brand_id");
+  const back = backTo(fd, `/app/brands/${brandId}`);
+  const { error } = await createAdminClient().from("amazon_connections").delete().eq("brand_id", brandId);
+  if (error) fail(back, "Could not disconnect.");
+  revalidatePath("/app", "layout");
+  redirect(withParam(back, "ok", "Disconnected from Amazon. Nothing is pulled any more. Existing links and numbers are untouched."));
 }

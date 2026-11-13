@@ -18,3 +18,6 @@ export async function createClient() {
     }
   );
 }
+
+/** False until the Supabase keys are set (a fresh deploy). Routes use it to send people to the sign-in page instead of crashing. */
+export const supabaseConfigured = () => !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;

@@ -185,3 +185,16 @@ export async function getDataThrough(scope: { product?: string; brand?: string }
 }
 
 export const totalsFor = (map: Map<string, Totals>, linkId: string) => map.get(linkId) ?? ZERO;
+
+export type AmazonStatus = {
+  connected: boolean; region?: string; advertiser_id?: string | null; advertiser_name?: string | null;
+  candidates?: { profileId: string; advertiserId: string; advertiserName: string; countryCode: string }[];
+  connected_at?: string; last_sync_at?: string | null; last_sync_status?: string | null; last_sync_rows?: number | null;
+};
+/** Whether a brand is connected to the Amazon Ads API, and how the last sync went. Never returns the token. */
+export async function getAmazonStatus(brandId: string): Promise<AmazonStatus> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("amazon_status", { p_brand: brandId });
+  if (error) throw new Error(error.message);
+  return (data as AmazonStatus | null) ?? { connected: false };
+}
