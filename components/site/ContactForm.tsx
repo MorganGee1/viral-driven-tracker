@@ -20,36 +20,36 @@ export function ContactForm() {
     <form onSubmit={submit} className="card space-y-4 p-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className="label mb-1.5 block">Your name</label>
+          <label className="label mb-1 block">Your name</label>
           <input required className="input" value={f.name} onChange={set("name")} />
         </div>
         <div>
-          <label className="label mb-1.5 block">Email</label>
+          <label className="label mb-1 block">Email</label>
           <input required type="email" className="input" value={f.email} onChange={set("email")} />
         </div>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="sm:col-span-1">
-          <label className="label mb-1.5 block">Brand</label>
+          <label className="label mb-1 block">Brand</label>
           <input className="input" value={f.brand} onChange={set("brand")} />
         </div>
         <div>
-          <label className="label mb-1.5 block">Marketplace</label>
+          <label className="label mb-1 block">Marketplace</label>
           <select className="select" value={f.marketplace} onChange={set("marketplace")}>
             <option>US</option><option>UK</option><option>Both</option><option>Other</option>
           </select>
         </div>
         <div>
-          <label className="label mb-1.5 block">Creators</label>
-          <input className="input" placeholder="e.g. 20" value={f.creators} onChange={set("creators")} />
+          <label className="label mb-1 block">Creators</label>
+          <input className="input" placeholder="20" value={f.creators} onChange={set("creators")} />
         </div>
       </div>
       <div>
-        <label className="label mb-1.5 block">What do you need?</label>
+        <label className="label mb-1 block">What do you need?</label>
         <textarea rows={5} className="input" value={f.message} onChange={set("message")} />
       </div>
-      <button className="btn-primary w-full py-3" type="submit">Send enquiry</button>
-      <p className="font-mono text-[11px] text-ink-3">Opens in your email app, addressed to {SITE.email}.</p>
+      <button className="btn-primary btn-lg w-full" type="submit">Send enquiry</button>
+      <p className="font-mono text-xs text-ink-3">Opens in your email app, addressed to {SITE.email}</p>
     </form>
   );
 }

@@ -37,9 +37,9 @@ export default async function BrandPage({ params, searchParams }: { params: Prom
     <div className="mx-auto max-w-6xl">
       <Flash ok={sp.ok} error={sp.error} />
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-3xl font-bold tracking-tight">{brand.name}</h1>
+        <h1 className="text-3xl font-medium">{brand.name}</h1>
         <span className="pill-muted">{brand.marketplace}</span>
-        <span className="ml-auto font-mono text-[11px] text-ink-3">
+        <span className="ml-auto font-mono text-xs text-ink-3">
           {through ? `Data through ${fmtDay(through, { day: "numeric", month: "short", year: "numeric" })} · Los Angeles days` : "No sales data yet"}
         </span>
       </div>
@@ -47,18 +47,20 @@ export default async function BrandPage({ params, searchParams }: { params: Prom
       <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="card p-6">
           <div className="label">Total sales · this month</div>
-          <div className="big-number mt-2 text-5xl font-extrabold">{money(m.sales, cur)}</div>
-          <div className="mt-2 font-mono text-[11px] text-ink-3">Includes brand halo · {fmtDay(month.from)} to {fmtDay(month.to)}</div>
+          <div className="big-number mt-2 text-5xl font-medium tracking-[-0.02em]">{money(m.sales, cur)}</div>
+          <div className="mt-2 font-mono text-xs text-ink-3">Includes brand halo · {fmtDay(month.from)} to {fmtDay(month.to)}</div>
           {bonus > 0 && (
-            <div className="mt-4 inline-flex rounded-lg border border-amber/30 bg-amber/10 px-3 py-1.5 font-mono text-xs text-amber">
-              Brand Referral Bonus {money(bonus, cur)} · team only
+            <div className="mt-4 flex max-w-sm items-baseline gap-2 font-mono text-xs">
+              <span className="shrink-0 text-ink-2">Brand Referral Bonus · team only</span>
+              <span className="leader" />
+              <span className="num shrink-0 text-ink">{money(bonus, cur)}</span>
             </div>
           )}
         </div>
         <div className="card p-6">
           <div className="label">Total sales · last 30 days</div>
-          <div className="big-number mt-2 text-5xl font-extrabold">{money(t30.sales, cur)}</div>
-          <div className="mt-2 font-mono text-[11px] text-ink-3">{fmtDay(d30.from)} to {fmtDay(d30.to)}</div>
+          <div className="big-number mt-2 text-5xl font-medium tracking-[-0.02em]">{money(t30.sales, cur)}</div>
+          <div className="mt-2 font-mono text-xs text-ink-3">{fmtDay(d30.from)} to {fmtDay(d30.to)}</div>
         </div>
       </div>
 
@@ -71,8 +73,8 @@ export default async function BrandPage({ params, searchParams }: { params: Prom
         ] as const).map(([label, a, b]) => (
           <div key={label} className="card p-4">
             <div className="label">{label} · this month</div>
-            <div className="big-number mt-1 text-2xl font-bold">{a}</div>
-            <div className="mt-1 font-mono text-[11px] text-ink-3">last 30 days: {b}</div>
+            <div className="big-number mt-1 text-2xl font-medium">{a}</div>
+            <div className="mt-1 font-mono text-xs text-ink-3">last 30 days: {b}</div>
           </div>
         ))}
       </div>
@@ -80,7 +82,7 @@ export default async function BrandPage({ params, searchParams }: { params: Prom
       <div className="card mt-4 p-6">
         <div className="label mb-3">Clicks and purchases per day · last 30 days</div>
         <DayChart days={days} bar={days.map((d) => byDay.get(d)?.clicks ?? 0)} line={days.map((d) => byDay.get(d)?.purchases ?? 0)} barLabel="Clicks" lineLabel="Purchases" />
-        <p className="mt-3 font-mono text-[11px] text-ink-3">Amazon can restate the most recent days for up to 31 days, so recent numbers may still move.</p>
+        <p className="mt-3 font-mono text-xs text-ink-3">Amazon can restate the most recent days for up to 31 days, so recent numbers may still move.</p>
       </div>
 
       <div className="card mt-4 overflow-hidden">
@@ -93,7 +95,7 @@ export default async function BrandPage({ params, searchParams }: { params: Prom
               <div className="truncate font-medium">{p.name}{p.status === "archived" && <span className="pill-muted ml-2">archived</span>}</div>
               <div className="hidden text-right font-mono text-xs text-ink-2 md:block">{num(t.clicks)} clicks</div>
               <div className="hidden text-right font-mono text-xs text-ink-2 md:block">{num(t.purchases)} purchases</div>
-              <div className="big-number text-right font-semibold">{money(t.sales, cur)}</div>
+              <div className="big-number text-right font-medium">{money(t.sales, cur)}</div>
               <div className="hidden text-right font-mono text-xs text-ink-3 md:block">{share(t.sales, m.sales)}</div>
             </Link>
           );
@@ -109,7 +111,7 @@ export default async function BrandPage({ params, searchParams }: { params: Prom
           <input name="page_url" required placeholder="Amazon page, e.g. https://www.amazon.com/dp/B0XXXXXXXX" className="input" />
           <input name="page_name" maxLength={80} placeholder="Name for that Amazon page (optional)" className="input" />
           <button className="btn-primary w-full">Add product</button>
-          <p className="font-mono text-[11px] leading-relaxed text-ink-3">You can add more Amazon pages to a product later in its Settings.</p>
+          <p className="font-mono text-xs leading-relaxed text-ink-3">You can add more Amazon pages to a product later in its Settings.</p>
         </form>
         <form action={updateBrand} className="card space-y-3 p-5">
           <div className="label">Brand details</div>

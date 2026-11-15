@@ -15,7 +15,8 @@ import {
 } from "@/lib/util";
 
 type SP = { period?: string; from?: string; to?: string; creator?: string; ok?: string; error?: string; new?: string };
-const COLORS = ["bg-accent", "bg-violet", "bg-amber", "bg-sky", "bg-rose", "bg-ink-3"];
+// The top creator gets the accent. Everyone after that gets a quieter ink, so the leader reads first.
+const COLORS = ["bg-accent", "bg-ink", "bg-violet", "bg-amber", "bg-sky", "bg-ink-3"];
 
 export default async function ProductPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<SP> }) {
   const { id } = await params;
@@ -55,10 +56,10 @@ async function CreatorLinks({ id, sp, me }: { id: string; sp: SP; me: Profile })
     <div>
       <Flash ok={sp.ok} error={sp.error} />
       {fresh && (
-        <div className="mb-5 rounded-xl border border-accent/40 bg-accent/10 p-4">
-          <div className="text-sm font-semibold text-accent">Link ready: {fresh.name}</div>
+        <div className="mb-5 rounded-lg border border-accent/30 bg-accent/5 p-4">
+          <div className="text-sm font-medium text-accent">Link ready: {fresh.name}</div>
           <div className="mt-2 flex flex-wrap items-center gap-3">
-            <div className="min-w-0 flex-1 truncate rounded-lg bg-bg px-3 py-2 font-mono text-[11px] text-ink-2">{urlOf(fresh)}</div>
+            <div className="min-w-0 flex-1 truncate rounded-lg bg-bg px-3 py-2 font-mono text-xs text-ink-2">{urlOf(fresh)}</div>
             <CopyButton text={urlOf(fresh)} />
           </div>
           {!fresh.amazon_tag && <p className="mt-2 text-xs text-amber">Tracking has not been attached to this link yet. Your manager does that. Wait for it to show as tracked before you post it, or its sales will not count for you.</p>}
@@ -68,7 +69,7 @@ async function CreatorLinks({ id, sp, me }: { id: string; sp: SP; me: Profile })
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <div className="label">Your links · {period.label.toLowerCase()}</div>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight">Hi {me.username.split(" ")[0]}. Here is what your links sold.</h1>
+          <h1 className="mt-1 text-2xl font-medium">What your links sold</h1>
         </div>
         <AutoForm className="flex items-end gap-3"><PeriodSelect period={period} /></AutoForm>
       </div>
@@ -77,11 +78,11 @@ async function CreatorLinks({ id, sp, me }: { id: string; sp: SP; me: Profile })
         {([["Sales", money(mine.sales, cur)], ["Purchases", num(mine.purchases)], ["Clicks", num(mine.clicks)]] as const).map(([l, v]) => (
           <div key={l} className="card min-w-0 p-3 sm:p-4">
             <div className="label">{l}</div>
-            <div className="big-number mt-1 truncate text-base font-bold sm:text-2xl">{v}</div>
+            <div className="big-number mt-1 truncate text-base font-medium sm:text-2xl">{v}</div>
           </div>
         ))}
       </div>
-      <div className="mt-2 font-mono text-[11px] text-ink-3">
+      <div className="mt-2 font-mono text-xs text-ink-3">
         {through ? `Numbers run up to ${fmtDay(through, { day: "numeric", month: "short" })}. Amazon takes a day or two to report sales, so today will look low.` : "No sales have been reported for this product yet."}
       </div>
 
@@ -100,7 +101,7 @@ async function CreatorLinks({ id, sp, me }: { id: string; sp: SP; me: Profile })
         <div className="order-1 min-w-0 lg:order-2">
           <NewLinkForm key={links.length} productId={id} back={back} pages={livePages.map((p) => ({ id: p.id, name: p.name }))}
             accounts={links.map((l) => ({ platform: l.platform, account: l.account }))} />
-          <p className="mt-3 px-1 font-mono text-[11px] leading-relaxed text-ink-3">
+          <p className="mt-3 px-1 font-mono text-xs leading-relaxed text-ink-3">
             You only ever see your own links and numbers for {product.name}. Other creators cannot see yours.
           </p>
         </div>
@@ -163,7 +164,7 @@ async function TeamOverview({ id, sp }: { id: string; sp: SP }) {
             {names.map((p) => <option key={p.id} value={p.id}>{p.username}</option>)}
           </select>
         </label>
-        <span className="ml-auto self-center font-mono text-[11px] text-ink-3">
+        <span className="ml-auto self-center font-mono text-xs text-ink-3">
           {through ? `Data through ${fmtDay(through, { day: "numeric", month: "short", year: "numeric" })} · Los Angeles days` : "No sales data yet"}
         </span>
       </AutoForm>
@@ -171,18 +172,20 @@ async function TeamOverview({ id, sp }: { id: string; sp: SP }) {
       <div className="card grid grid-cols-1 gap-6 p-6 md:grid-cols-[1.3fr_1fr] md:p-8">
         <div>
           <div className="label">Total sales · {period.label.toLowerCase()} · {chosen ? profiles.get(chosen)?.username : `${creatorIds.length} creators`}</div>
-          <div className="big-number mt-2 text-5xl font-extrabold md:text-7xl">{money(t.sales, cur)}</div>
-          <div className="mt-2 font-mono text-[11px] text-ink-3">Includes brand halo</div>
+          <div className="big-number mt-2 text-5xl font-medium tracking-[-0.02em] md:text-7xl">{money(t.sales, cur)}</div>
+          <div className="mt-2 font-mono text-xs text-ink-3">Includes brand halo</div>
           {!chosen && bonus > 0 && (
-            <div className="mt-4 inline-flex rounded-lg border border-amber/30 bg-amber/10 px-3 py-1.5 font-mono text-xs text-amber">
-              Brand Referral Bonus {money(bonus, cur)} · team only
+            <div className="mt-4 flex max-w-sm items-baseline gap-2 font-mono text-xs">
+              <span className="shrink-0 text-ink-2">Brand Referral Bonus · team only</span>
+              <span className="leader" />
+              <span className="num shrink-0 text-ink">{money(bonus, cur)}</span>
             </div>
           )}
         </div>
         <div className="grid grid-cols-2 gap-3 self-end">
           {([["Purchases", num(t.purchases)], ["Units", num(t.units)], ["Clicks", num(t.clicks)], ["Conversion", conversion(t.purchases, t.clicks)]] as const).map(([l, v]) => (
-            <div key={l} className="rounded-xl border border-line bg-panel-2 p-4">
-              <div className="big-number text-2xl font-bold">{v}</div>
+            <div key={l} className="rounded-lg border border-line bg-panel-2 p-4">
+              <div className="big-number text-2xl font-medium">{v}</div>
               <div className="label mt-1">{l}</div>
             </div>
           ))}
@@ -196,19 +199,23 @@ async function TeamOverview({ id, sp }: { id: string; sp: SP }) {
         ) : (
           <>
             <div className="mt-4"><SplitBar parts={parts} /></div>
-            <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-4 grid grid-cols-1 gap-x-8 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
               {top.map(([cid, v], i) => (
-                <div key={cid} className="flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm">
-                  <span className={`h-2.5 w-2.5 shrink-0 rounded-sm ${COLORS[i]}`} />
+                <div key={cid} className="flex items-baseline gap-2 text-sm">
+                  <span className={`h-2 w-2 shrink-0 self-center rounded-sm ${COLORS[i]}`} />
                   <span className="truncate">{profiles.get(cid)?.username ?? "Unknown"}</span>
-                  <span className="ml-auto shrink-0 font-mono text-xs text-ink-3">{money(v, cur)} · {share(v, allSales)}</span>
+                  <span className="leader" />
+                  <span className="num shrink-0 font-mono text-xs text-ink">{money(v, cur)}</span>
+                  <span className="num w-12 shrink-0 text-right font-mono text-xs text-ink-3">{share(v, allSales)}</span>
                 </div>
               ))}
               {rest > 0 && (
-                <div className="flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm">
-                  <span className={`h-2.5 w-2.5 shrink-0 rounded-sm ${COLORS[5]}`} />
+                <div className="flex items-baseline gap-2 text-sm">
+                  <span className={`h-2 w-2 shrink-0 self-center rounded-sm ${COLORS[5]}`} />
                   <span className="truncate">{ranked.length - 5} more creators</span>
-                  <span className="ml-auto shrink-0 font-mono text-xs text-ink-3">{money(rest, cur)} · {share(rest, allSales)}</span>
+                  <span className="leader" />
+                  <span className="num shrink-0 font-mono text-xs text-ink">{money(rest, cur)}</span>
+                  <span className="num w-12 shrink-0 text-right font-mono text-xs text-ink-3">{share(rest, allSales)}</span>
                 </div>
               )}
             </div>

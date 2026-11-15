@@ -1,58 +1,98 @@
 @import "tailwindcss";
 
+/*
+  Direction: the paper trail of a sale. Receipt paper, ink text, one banknote-green accent.
+  Chrome stays quiet. Colour only shows up where it means something (a figure, a share, a state).
+*/
 @theme {
-  --color-bg: #0b0f0e;
-  --color-panel: #11171a;
-  --color-panel-2: #161e22;
-  --color-line: #1f2a2e;
-  --color-line-2: #2a373c;
-  --color-ink: #eef3f1;
-  --color-ink-2: #a9b6b2;
-  --color-ink-3: #6e7c78;
-  --color-accent: #35d07f;
-  --color-accent-2: #1ea866;
-  --color-rose: #e0457b;
-  --color-amber: #e8b04b;
-  --color-violet: #8b7cf6;
-  --color-sky: #4fb3e8;
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* warm paper ramp */
+  --color-bg: #f7f4ee;
+  --color-panel: #fdfbf7;
+  --color-panel-2: #efe9df;
+  --color-line: rgb(31 27 22 / 0.1);
+  --color-line-2: rgb(31 27 22 / 0.2);
+  /* three text roles */
+  --color-ink: #1f1b16;
+  --color-ink-2: #5e554a;
+  --color-ink-3: #736a5e;
+  /* the one accent: banknote green */
+  --color-accent: #17603f;
+  --color-accent-2: #114b31;
+  /* states, and the quieter inks used when a chart has to tell series apart */
+  --color-rose: #a5382b;
+  --color-amber: #8a5d0f;
+  --color-violet: #3f4c7d;
+  --color-sky: #5c8482;
+
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --default-transition-duration: 150ms;
+  --default-transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-html { color-scheme: dark; }
-body {
-  background: var(--color-bg);
-  color: var(--color-ink);
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
+/* The signed-in app sits on plainer, greyer paper so the numbers carry the colour. */
+.app-theme {
+  --color-bg: #f8f7f5;
+  --color-panel: #ffffff;
+  --color-panel-2: #f1efec;
 }
 
-.mono { font-family: var(--font-mono); }
-.label { @apply font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3; }
-
-.btn { @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition; }
-.btn-primary { @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition bg-accent text-black hover:bg-accent-2; }
-.btn-ghost { @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition border border-line-2 text-ink hover:border-ink-3 hover:bg-panel-2; }
-.btn-danger { @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition border border-rose/40 text-rose hover:bg-rose/10; }
-
-.input { @apply w-full rounded-lg border border-line-2 bg-panel px-3 py-2 text-sm text-ink outline-none placeholder:text-ink-3 focus:border-accent; }
-.select { @apply w-full rounded-lg border border-line-2 bg-panel px-3 py-2 text-sm text-ink outline-none placeholder:text-ink-3 focus:border-accent appearance-none; }
-
-.card { @apply rounded-2xl border border-line bg-panel; }
-.pill { @apply font-mono inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] uppercase tracking-wider; }
-.pill-live { @apply font-mono inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] uppercase tracking-wider border-accent/40 bg-accent/10 text-accent; }
-.pill-muted { @apply font-mono inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] uppercase tracking-wider border-line-2 text-ink-3; }
-
-.big-number { font-variant-numeric: tabular-nums; letter-spacing: -0.04em; }
-
-.hero-glow {
-  background:
-    radial-gradient(60% 50% at 70% 10%, rgba(53,208,127,0.14), transparent 70%),
-    radial-gradient(40% 40% at 10% 60%, rgba(224,69,123,0.10), transparent 70%);
+@layer base {
+  html { color-scheme: light; }
+  body {
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  strong, b { font-weight: 600; }
+  :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 }
 
-.prose-legal h2 { @apply mt-10 mb-3 text-xl font-semibold text-ink; }
-.prose-legal h3 { @apply mt-6 mb-2 text-base font-semibold text-ink; }
-.prose-legal p, .prose-legal li { @apply text-ink-2 leading-relaxed; }
-.prose-legal ul { @apply my-3 list-disc pl-6 space-y-1; }
-.prose-legal p { @apply my-3; }
+/* Component classes live in the components layer so a utility on the same element always wins. */
+@layer components {
+  .mono { font-family: var(--font-mono); }
+  .label { @apply font-mono text-xs text-ink-3; }
+
+  .btn { @apply inline-flex h-9 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition-colors active:scale-[0.98]; }
+  .btn-primary { @apply inline-flex h-9 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition-colors active:scale-[0.98] bg-ink text-panel hover:bg-[#3a342c]; }
+  .btn-ghost { @apply inline-flex h-9 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition-colors active:scale-[0.98] border border-line-2 bg-panel text-ink hover:bg-panel-2; }
+  .btn-danger { @apply inline-flex h-9 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition-colors active:scale-[0.98] border border-rose/40 text-rose hover:bg-rose/10; }
+  .btn-accent { @apply bg-accent text-white hover:bg-accent-2; }
+  .btn-lg { @apply h-12 px-5 text-base; }
+  .btn-sm { @apply h-8 px-3 text-xs; }
+
+  .input { @apply w-full rounded-lg border border-line-2 bg-panel px-3 py-2 text-sm text-ink outline-none placeholder:text-ink-3 focus:border-ink; }
+  .select { @apply w-full rounded-lg border border-line-2 bg-panel px-3 py-2 text-sm text-ink outline-none placeholder:text-ink-3 focus:border-ink appearance-none; }
+
+  .card { @apply rounded-xl border border-line bg-panel; }
+
+  /* Tags are quiet mono text in a hairline box, never a glowing pill. */
+  .pill { @apply inline-flex items-center rounded border px-2 font-mono text-xs leading-5; }
+  .pill-live { @apply inline-flex items-center rounded border px-2 font-mono text-xs leading-5 border-accent/30 text-accent; }
+  .pill-muted { @apply inline-flex items-center rounded border px-2 font-mono text-xs leading-5 border-line-2 text-ink-3; }
+
+  .big-number { font-variant-numeric: tabular-nums; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* Signature: the dotted line a receipt runs between a name and its amount. */
+  .leader { @apply min-w-4 flex-1 self-end border-b border-dotted border-ink-3/60; margin-bottom: 0.35em; }
+
+  /* The receipt in the hero: thermal paper with a torn bottom edge. */
+  .receipt-wrap { filter: drop-shadow(0 1px 1px rgb(31 27 22 / 0.08)) drop-shadow(0 12px 24px rgb(31 27 22 / 0.14)); }
+  .receipt {
+    background: #fffdf8;
+    --tooth: 8px;
+    mask:
+      conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / var(--tooth) 51% repeat-x,
+      linear-gradient(#000 0 0) top / 100% calc(100% - var(--tooth) / 2) no-repeat;
+  }
+  .receipt-rule { @apply my-3 border-t border-dashed border-ink-3/50; }
+
+  .prose-legal h2 { @apply mt-10 mb-3 text-xl font-medium text-ink; }
+  .prose-legal h3 { @apply mt-6 mb-2 text-base font-medium text-ink; }
+  .prose-legal p, .prose-legal li { @apply text-ink-2 leading-relaxed; }
+  .prose-legal ul { @apply my-3 list-disc pl-6 space-y-1; }
+  .prose-legal p { @apply my-3; }
+}

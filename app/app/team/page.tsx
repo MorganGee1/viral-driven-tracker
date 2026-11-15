@@ -25,8 +25,8 @@ export default async function Team({ searchParams }: { searchParams: Promise<{ o
     <div className="flex min-w-0 flex-1 items-center gap-3">
       {p.avatar_url ? <img src={p.avatar_url} alt="" className="h-9 w-9 shrink-0 rounded-full" /> : <div className="h-9 w-9 shrink-0 rounded-full bg-line-2" />}
       <div className="min-w-0">
-        <div className="truncate text-sm font-medium">{p.username}{p.id === me.id && <span className="ml-2 font-mono text-[10px] text-ink-3">you</span>}</div>
-        <div className="truncate font-mono text-[10px] text-ink-3">
+        <div className="truncate text-sm font-medium">{p.username}{p.id === me.id && <span className="ml-2 font-mono text-xs text-ink-3">you</span>}</div>
+        <div className="truncate font-mono text-xs text-ink-3">
           {p.discord_username ? `@${p.discord_username} · ` : ""}joined {fmtDay(p.created_at.slice(0, 10), { day: "numeric", month: "short", year: "numeric" })}
         </div>
       </div>
@@ -39,7 +39,7 @@ export default async function Team({ searchParams }: { searchParams: Promise<{ o
         <select name="role" defaultValue={p.role} className="select w-28 py-1.5" aria-label={`Role for ${p.username}`}>
           <option value="creator">Creator</option><option value="team">Team</option><option value="owner">Owner</option>
         </select>
-        <button className="btn-ghost py-1.5">Save</button>
+        <button className="btn-ghost btn-sm">Save</button>
       </form>
     ) : (
       <span className={p.role === "creator" ? "pill-muted" : "pill-live"}>{ROLE_LABEL[p.role]}</span>
@@ -50,7 +50,7 @@ export default async function Team({ searchParams }: { searchParams: Promise<{ o
       <Flash ok={sp.ok} error={sp.error} />
       <div>
         <div className="label">Team · {staff.length} {staff.length === 1 ? "person" : "people"}</div>
-        <h1 className="mt-1 text-3xl font-bold tracking-tight">Who sees everything</h1>
+        <h1 className="mt-1 text-3xl font-medium">Who sees everything</h1>
         <p className="mt-2 text-sm leading-relaxed text-ink-2">
           Team members see every brand, creator, link and sale, and can add brands, products, Amazon pages and invite links.
           Creators only ever see their own links and numbers. {owner ? "As the owner, you add and remove team members." : "Only the owner can add or remove team members."}
@@ -86,7 +86,7 @@ export default async function Team({ searchParams }: { searchParams: Promise<{ o
             return (
               <div key={p.id} className="card flex flex-wrap items-center gap-3 p-3">
                 {person(p)}
-                <span className="font-mono text-[11px] text-ink-3">{list.length ? list.join(", ") : "not in a product yet"}</span>
+                <span className="font-mono text-xs text-ink-3">{list.length ? list.join(", ") : "not in a product yet"}</span>
                 {roleForm(p)}
               </div>
             );

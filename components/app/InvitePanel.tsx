@@ -17,23 +17,23 @@ export function InvitePanel({ invites, origin, back, role, productId, canManage 
         const url = `${origin}/join/${i.code}`;
         const st = state(i);
         return (
-          <div key={i.id} className={`rounded-xl border border-line bg-panel-2 p-4 ${st === "active" ? "" : "opacity-60"}`}>
+          <div key={i.id} className={`rounded-lg border border-line bg-panel-2 p-4 ${st === "active" ? "" : "opacity-60"}`}>
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-medium">{i.name}</span>
               <span className={st === "active" ? "pill-live" : "pill-muted"}>{st}</span>
               <span className="pill-muted">{role === "team" ? "Team" : "Creator"}</span>
-              <span className="ml-auto font-mono text-[11px] text-ink-3">
+              <span className="ml-auto font-mono text-xs text-ink-3">
                 used {i.uses}{i.max_uses !== null ? ` of ${i.max_uses}` : " · no limit"} · {i.expires_at ? `expires ${fmtDay(i.expires_at.slice(0, 10), { day: "numeric", month: "short", year: "numeric" })}` : "never expires"} · Discord required
               </span>
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <div className="min-w-0 flex-1 basis-56 truncate rounded-lg bg-bg px-3 py-2 font-mono text-[11px] text-ink-2">{url}</div>
+              <div className="min-w-0 flex-1 basis-56 truncate rounded-lg bg-bg px-3 py-2 font-mono text-xs text-ink-2">{url}</div>
               {st === "active" && <CopyButton text={url} label="Copy" small />}
               {canManage && (
                 <form action={setInviteActive}>
                   <input type="hidden" name="id" value={i.id} /><input type="hidden" name="back" value={back} />
                   <input type="hidden" name="active" value={i.active ? "0" : "1"} />
-                  <button className="btn-ghost px-3 py-1.5 text-xs">{i.active ? "Switch off" : "Switch on"}</button>
+                  <button className="btn-ghost btn-sm">{i.active ? "Switch off" : "Switch on"}</button>
                 </form>
               )}
             </div>
@@ -41,7 +41,7 @@ export function InvitePanel({ invites, origin, back, role, productId, canManage 
         );
       })}
       {canManage && (
-        <form action={createInvite} className="grid grid-cols-1 gap-2 rounded-xl border border-dashed border-line-2 p-4 sm:grid-cols-[1fr_150px_130px_auto]">
+        <form action={createInvite} className="grid grid-cols-1 gap-2 rounded-lg border border-dashed border-line-2 p-4 sm:grid-cols-[1fr_150px_130px_auto]">
           <input type="hidden" name="role" value={role} /><input type="hidden" name="back" value={back} />
           {productId && <input type="hidden" name="product_id" value={productId} />}
           <input name="name" maxLength={80} placeholder={role === "team" ? "Name, e.g. Staff invite" : "Name, e.g. Discord announcement"} className="input" aria-label="Invite link name" />

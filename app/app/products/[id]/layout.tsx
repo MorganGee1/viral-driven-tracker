@@ -16,7 +16,7 @@ export default async function ProductLayout({ children, params }: { children: Re
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
         {team ? <Link href={`/app/brands/${brand.id}`} className="text-ink-3 hover:text-ink">{brand.name}</Link> : <span className="text-ink-3">{brand.name}</span>}
         <span className="text-ink-3">/</span>
-        <span className="text-lg font-semibold">{product.name}</span>
+        <span className="text-lg font-medium">{product.name}</span>
         {product.status === "archived" && <span className="pill-muted">archived</span>}
       </div>
       {team && <div className="mt-4"><ProductTabs id={id} /></div>}

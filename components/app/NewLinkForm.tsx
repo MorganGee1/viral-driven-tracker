@@ -40,7 +40,7 @@ export function NewLinkForm({ productId, back, pages, accounts, owners, defaultO
       {pages.length === 1 && <input type="hidden" name="page_id" value={pages[0].id} />}
       {pages.length > 1 && (
         <label className="block">
-          <span className="label mb-1.5 block">Amazon page</span>
+          <span className="label mb-2 block">Amazon page</span>
           <select name="page_id" className="select" required defaultValue="">
             <option value="" disabled>Pick the page this link opens</option>
             {pages.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -49,7 +49,7 @@ export function NewLinkForm({ productId, back, pages, accounts, owners, defaultO
       )}
       {owners && (
         <label className="block">
-          <span className="label mb-1.5 block">For</span>
+          <span className="label mb-2 block">For</span>
           <select name="owner_id" className="select" defaultValue={defaultOwner}>
             {owners.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
           </select>
@@ -57,34 +57,34 @@ export function NewLinkForm({ productId, back, pages, accounts, owners, defaultO
       )}
       <div className="grid grid-cols-2 gap-3">
         <label className="block">
-          <span className="label mb-1.5 block">Platform</span>
+          <span className="label mb-2 block">Platform</span>
           <select name="platform" className="select" value={platform} onChange={(e) => setPlatform(e.target.value as Platform)}>
             {PLATFORM_KEYS.map((k) => <option key={k} value={k}>{PLATFORMS[k]}</option>)}
           </select>
         </label>
         <label className="block">
-          <span className="label mb-1.5 block">Placement</span>
+          <span className="label mb-2 block">Placement</span>
           <select name="placement" className="select" value={placement} onChange={(e) => setPlacement(e.target.value as Placement)}>
             {PLACEMENT_KEYS.map((k) => <option key={k} value={k}>{PLACEMENTS[k]}</option>)}
           </select>
         </label>
       </div>
       <label className="block">
-        <span className="label mb-1.5 block">Account</span>
+        <span className="label mb-2 block">Account</span>
         <input name="account" required maxLength={80} list="remembered-accounts" autoComplete="off" autoCapitalize="none"
           placeholder={platform === "facebook" ? "Page name, e.g. Lashtruth.nora" : "@handle, e.g. @lashtruth.nora"} className="input" />
         <datalist id="remembered-accounts">{remembered.map((a) => <option key={a} value={a} />)}</datalist>
       </label>
       <label className="block">
-        <span className="label mb-1.5 block">Link name</span>
+        <span className="label mb-2 block">Link name</span>
         <input name="name" maxLength={80} className="input" value={name ?? defaultLinkName(platform, placement)} onChange={(e) => setName(e.target.value)} />
       </label>
       <label className="block">
-        <span className="label mb-1.5 block">Note (optional)</span>
+        <span className="label mb-2 block">Note (optional)</span>
         <input name="note" maxLength={300} placeholder="Anything you want to remember about this link" className="input" />
       </label>
       <Submit disabled={noPages} />
-      <p className="font-mono text-[11px] leading-relaxed text-ink-3">
+      <p className="font-mono text-xs leading-relaxed text-ink-3">
         One link per account and per place you put it. That is how sales get split by account and placement.
       </p>
     </form>

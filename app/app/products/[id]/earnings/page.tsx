@@ -117,16 +117,16 @@ export default async function Earnings({ params, searchParams }: { params: Promi
           </select></label>
         <label className="block"><span className="label mb-1 block">Search</span>
           <input name="q" defaultValue={f.q ?? ""} placeholder="Name, handle, link ID" className="input w-44 py-1.5" /></label>
-        {filtered && <Link href={`/app/products/${id}/earnings${query({ creator: null, account: null, placement: null, page: null, link: null, q: null })}`} className="btn-ghost py-1.5">Clear filters</Link>}
-        <a href={`/app/products/${id}/earnings/export${query({ metric: null, grain: null })}`} className="btn-ghost ml-auto py-1.5">Export sales (CSV)</a>
+        {filtered && <Link href={`/app/products/${id}/earnings${query({ creator: null, account: null, placement: null, page: null, link: null, q: null })}`} className="btn-ghost btn-sm">Clear filters</Link>}
+        <a href={`/app/products/${id}/earnings/export${query({ metric: null, grain: null })}`} className="btn-ghost btn-sm ml-auto">Export sales (CSV)</a>
       </AutoForm>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {(Object.keys(METRICS) as Metric[]).map((m) => (
           <Link key={m} href={query({ metric: m })} scroll={false}
-            className={`card p-4 transition hover:border-line-2 ${m === metric ? "border-accent" : ""}`}>
+            className={`card p-4 transition-colors hover:border-line-2 ${m === metric ? "border-accent" : ""}`}>
             <div className="label">{METRICS[m]}</div>
-            <div className="big-number mt-1 text-2xl font-bold">{value(m)}</div>
+            <div className="big-number mt-1 text-2xl font-medium">{value(m)}</div>
           </Link>
         ))}
       </div>
@@ -136,12 +136,12 @@ export default async function Earnings({ params, searchParams }: { params: Promi
           <div className="label">{METRICS[metric]} · {period.label.toLowerCase()}</div>
           <div className="ml-auto flex gap-1 rounded-lg border border-line p-0.5">
             {(Object.keys(GRAINS) as Grain[]).map((g) => (
-              <Link key={g} href={query({ grain: g })} scroll={false} className={`rounded-md px-3 py-1 font-mono text-[11px] ${g === grain ? "bg-panel-2 text-ink" : "text-ink-3 hover:text-ink"}`}>{GRAINS[g]}</Link>
+              <Link key={g} href={query({ grain: g })} scroll={false} className={`rounded-md px-3 py-1 font-mono text-xs ${g === grain ? "bg-panel-2 text-ink" : "text-ink-3 hover:text-ink"}`}>{GRAINS[g]}</Link>
             ))}
           </div>
         </div>
         <DayChart days={chartDays} bar={chartDays.map((d) => buckets.get(d) ?? 0)} barLabel={METRICS[metric]} format={metric === "sales" ? (n) => money(n, cur) : num} />
-        <p className="mt-3 font-mono text-[11px] text-ink-3">
+        <p className="mt-3 font-mono text-xs text-ink-3">
           Amazon source days, America/Los_Angeles. {through ? `Data through ${fmtDay(through, { day: "numeric", month: "short", year: "numeric" })}. ` : ""}
           Amazon can restate recent days for up to 31 days. Total sales includes brand halo.
         </p>
@@ -158,25 +158,25 @@ export default async function Earnings({ params, searchParams }: { params: Promi
             <summary className={`grid cursor-pointer select-none grid-cols-[1fr_auto] items-center gap-x-4 px-5 py-3 hover:bg-panel-2 ${cols}`}>
               <div className="min-w-0">
                 <div className="truncate text-sm font-medium">{profiles.get(cid)?.username ?? "Unknown"}</div>
-                <div className="truncate font-mono text-[10px] text-ink-3">{profiles.get(cid)?.discord_username ? `@${profiles.get(cid)!.discord_username} · ` : ""}{g.links.length} {g.links.length === 1 ? "link" : "links"}</div>
+                <div className="truncate font-mono text-xs text-ink-3">{profiles.get(cid)?.discord_username ? `@${profiles.get(cid)!.discord_username} · ` : ""}{g.links.length} {g.links.length === 1 ? "link" : "links"}</div>
               </div>
               <div className={cell}>{num(g.total.clicks)}</div><div className={cell}>{num(g.total.dpv)}</div><div className={cell}>{num(g.total.atc)}</div>
               <div className={cell}>{num(g.total.purchases)}</div>
-              <div className="big-number text-right font-semibold">{money(g.total.sales, cur)}</div>
+              <div className="big-number text-right font-medium">{money(g.total.sales, cur)}</div>
               <div className={cell}>{share(g.total.sales, t.sales)}</div>
             </summary>
             <div className="border-t border-line bg-panel-2">
               {[...g.links].sort((a, b) => (totals.get(b.id)?.sales ?? 0) - (totals.get(a.id)?.sales ?? 0)).map((l) => {
                 const lt = totals.get(l.id) ?? ZERO;
                 return (
-                  <div key={l.id} className={`grid grid-cols-[1fr_auto] items-center gap-x-4 border-b border-line/60 px-5 py-2.5 last:border-0 ${cols}`}>
+                  <div key={l.id} className={`grid grid-cols-[1fr_auto] items-center gap-x-4 border-b border-line/60 px-5 py-3 last:border-0 ${cols}`}>
                     <div className="min-w-0 pl-3">
                       <div className="flex flex-wrap items-center gap-2 text-sm">
                         <span className="pill-muted">{PLACEMENTS[l.placement]}</span>
                         <span className="truncate">{l.name}</span>
                         {l.archived_at && <span className="pill-muted">archived</span>}
                       </div>
-                      <div className="mt-0.5 truncate font-mono text-[10px] text-ink-3">
+                      <div className="mt-1 truncate font-mono text-xs text-ink-3">
                         {accountLabel(l.platform, l.account)}{pages.length > 1 ? ` · ${pageOf.get(l.page_id)?.name ?? ""}` : ""} · ID {l.short_id}
                       </div>
                     </div>

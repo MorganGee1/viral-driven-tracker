@@ -64,13 +64,13 @@ export default async function Creators({ params, searchParams }: { params: Promi
             <input name="q" defaultValue={sp.q ?? ""} placeholder="Creator name" className="input w-48 py-1.5" />
           </label>
         </AutoForm>
-        <div className="ml-auto font-mono text-[11px] text-ink-3">{ids.length} creators · {money(total, cur)} {period.label.toLowerCase()}</div>
+        <div className="ml-auto font-mono text-xs text-ink-3">{ids.length} creators · {money(total, cur)} {period.label.toLowerCase()}</div>
       </div>
 
       <details className="card p-5" open={invites.length === 0 || !!sp.ok || sp.invite === "1"}>
         <summary className="flex cursor-pointer select-none items-center gap-3">
           <span className="btn-primary">Invite creators</span>
-          <span className="font-mono text-[11px] text-ink-3">{activeInvites} active invite {activeInvites === 1 ? "link" : "links"}. Anyone who opens one signs in with Discord and lands on this product.</span>
+          <span className="font-mono text-xs text-ink-3">{activeInvites} active invite {activeInvites === 1 ? "link" : "links"}. Anyone who opens one signs in with Discord and lands on this product.</span>
         </summary>
         <div className="mt-4"><InvitePanel invites={invites} origin={origin} back={back} role="creator" productId={id} /></div>
       </details>
@@ -85,14 +85,14 @@ export default async function Creators({ params, searchParams }: { params: Promi
           <details key={r.cid} className="group border-b border-line last:border-0">
             <summary className="grid cursor-pointer select-none grid-cols-[1fr_auto] items-center gap-x-4 gap-y-2 px-5 py-3 hover:bg-panel-2 md:grid-cols-[1fr_130px_80px_minmax(120px,1fr)_120px]">
               <div className="flex min-w-0 items-center gap-3">
-                <span className="w-5 shrink-0 font-mono text-[11px] text-ink-3">{i + 1}</span>
+                <span className="w-5 shrink-0 font-mono text-xs text-ink-3">{i + 1}</span>
                 {r.p?.avatar_url ? <img src={r.p.avatar_url} alt="" className="h-8 w-8 shrink-0 rounded-full" /> : <div className="h-8 w-8 shrink-0 rounded-full bg-line-2" />}
                 <div className="min-w-0">
                   <div className="truncate text-sm font-medium">{r.p?.username ?? "Unknown"}</div>
-                  <div className="truncate font-mono text-[10px] text-ink-3">{r.p?.discord_username ? `@${r.p.discord_username}` : "Discord"}</div>
+                  <div className="truncate font-mono text-xs text-ink-3">{r.p?.discord_username ? `@${r.p.discord_username}` : "Discord"}</div>
                 </div>
               </div>
-              <div className="big-number text-right font-semibold">{money(r.sales, cur)}</div>
+              <div className="big-number text-right font-medium">{money(r.sales, cur)}</div>
               <div className="hidden text-right font-mono text-xs text-ink-2 md:block">{num(r.purchases)}</div>
               <div className="col-span-2 md:col-span-1">
                 <SplitBar className="h-2" parts={PLACEMENT_KEYS.map((k) => ({ key: k, value: r.by[k].sales, color: PLACEMENT_COLOR[k], title: `${PLACEMENTS[k]}: ${num(r.by[k].purchases)} sales, ${share(r.by[k].sales, r.sales)}` }))} />
@@ -104,7 +104,7 @@ export default async function Creators({ params, searchParams }: { params: Promi
                 <div className="label mb-2">Sales by placement</div>
                 {PLACEMENT_KEYS.filter((k) => r.by[k].sales > 0 || r.by[k].purchases > 0).map((k) => (
                   <div key={k} className="flex items-center gap-2 py-1 text-sm">
-                    <span className={`h-2.5 w-2.5 rounded-sm ${PLACEMENT_COLOR[k]}`} />
+                    <span className={`h-2 w-2 rounded-sm ${PLACEMENT_COLOR[k]}`} />
                     <span>{PLACEMENTS[k]}</span>
                     <span className="ml-auto font-mono text-xs text-ink-2">{num(r.by[k].purchases)} sales · {share(r.by[k].sales, r.sales)} · {money(r.by[k].sales, cur)}</span>
                   </div>
@@ -113,7 +113,7 @@ export default async function Creators({ params, searchParams }: { params: Promi
               <div>
                 <div className="label mb-2">Accounts · {r.linkCount} live {r.linkCount === 1 ? "link" : "links"}</div>
                 <div className="text-sm text-ink-2">{r.accounts.length ? r.accounts.join(", ") : "No links yet"}</div>
-                <div className="mt-3 font-mono text-[11px] text-ink-3">Discord ID {r.p?.discord_id ?? "unknown"}</div>
+                <div className="mt-3 font-mono text-xs text-ink-3">Discord ID {r.p?.discord_id ?? "unknown"}</div>
                 <Link href={`/app/products/${id}/earnings?creator=${r.cid}&period=${period.key}`} className="mt-3 inline-block text-sm text-accent hover:underline">Open in Earnings</Link>
               </div>
             </div>
@@ -130,15 +130,15 @@ export default async function Creators({ params, searchParams }: { params: Promi
             {quiet.map((r) => (
               <div key={r.cid} className="flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm">
                 <span className="truncate">{r.p?.username ?? "Unknown"}</span>
-                <span className="ml-auto shrink-0 font-mono text-[11px] text-ink-3">{r.linkCount} {r.linkCount === 1 ? "link" : "links"}</span>
+                <span className="ml-auto shrink-0 font-mono text-xs text-ink-3">{r.linkCount} {r.linkCount === 1 ? "link" : "links"}</span>
               </div>
             ))}
           </div>
         </details>
       )}
 
-      <div className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-[11px] text-ink-3">
-        {PLACEMENT_KEYS.map((k) => <span key={k} className="flex items-center gap-1.5"><span className={`h-2 w-2 rounded-sm ${PLACEMENT_COLOR[k]}`} />{PLACEMENTS[k]}</span>)}
+      <div className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-xs text-ink-3">
+        {PLACEMENT_KEYS.map((k) => <span key={k} className="flex items-center gap-2"><span className={`h-2 w-2 rounded-sm ${PLACEMENT_COLOR[k]}`} />{PLACEMENTS[k]}</span>)}
       </div>
     </div>
   );

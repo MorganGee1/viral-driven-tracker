@@ -13,7 +13,7 @@ export default async function ImportPage({ params }: { params: Promise<{ id: str
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
       <div className="min-w-0 space-y-4">
         <ImportForm productId={id} />
-        <div className="font-mono text-[11px] text-ink-3">
+        <div className="font-mono text-xs text-ink-3">
           {through ? `${product.name} has numbers up to ${fmtDay(through, { day: "numeric", month: "short", year: "numeric" })}.` : `${product.name} has no numbers yet.`}
         </div>
       </div>

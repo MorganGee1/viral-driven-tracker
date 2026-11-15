@@ -16,20 +16,20 @@ export function DayChart({ days, bar, line, barLabel, lineLabel, format = num, h
   const ticks = days.length <= 2 ? days.map((_, i) => i) : [0, Math.floor((days.length - 1) / 2), days.length - 1];
   return (
     <div>
-      <div className="mb-2 flex flex-wrap items-center gap-x-5 gap-y-1 font-mono text-[11px] text-ink-3">
-        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-accent" />{barLabel} · peak {format(Math.max(...bar, 0))}</span>
-        {line && lineLabel && <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 bg-rose" />{lineLabel} · peak {num(Math.max(...line, 0))}</span>}
+      <div className="mb-2 flex flex-wrap items-center gap-x-5 gap-y-1 font-mono text-xs text-ink-3">
+        <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-sm bg-accent" />{barLabel} · peak {format(Math.max(...bar, 0))}</span>
+        {line && lineLabel && <span className="flex items-center gap-2"><span className="h-0.5 w-4 bg-ink" />{lineLabel} · peak {num(Math.max(...line, 0))}</span>}
       </div>
       <svg viewBox={`0 0 ${w} ${h}`} className="w-full" role="img" aria-label={`${barLabel} per day`}>
-        <line x1="0" x2={w} y1={h - padB} y2={h - padB} stroke="#1f2a2e" />
+        <line x1="0" x2={w} y1={h - padB} y2={h - padB} stroke="rgb(31 27 22 / 0.15)" />
         {bar.map((v, i) => (
-          <rect key={days[i]} x={(i + 0.5) * slot - bw / 2} y={y(v, maxBar)} width={bw} height={Math.max(0, h - padB - y(v, maxBar))} rx="2" fill="#35d07f" opacity="0.85">
+          <rect key={days[i]} x={(i + 0.5) * slot - bw / 2} y={y(v, maxBar)} width={bw} height={Math.max(0, h - padB - y(v, maxBar))} rx="2" fill="#17603f">
             <title>{`${fmtDay(days[i])}: ${format(v)} ${barLabel.toLowerCase()}${line && lineLabel ? `, ${num(line[i])} ${lineLabel.toLowerCase()}` : ""}`}</title>
           </rect>
         ))}
-        {pts && <polyline points={pts} fill="none" stroke="#e0457b" strokeWidth="2.5" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />}
+        {pts && <polyline points={pts} fill="none" stroke="#1f1b16" strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />}
         {ticks.map((i) => (
-          <text key={i} x={Math.min(w - 4, Math.max(4, (i + 0.5) * slot))} y={h - 5} fill="#6e7c78" fontSize="13" fontFamily="monospace"
+          <text key={i} x={Math.min(w - 4, Math.max(4, (i + 0.5) * slot))} y={h - 5} fill="#736a5e" fontSize="13" fontFamily="IBM Plex Mono, ui-monospace, monospace"
             textAnchor={i === 0 ? "start" : i === days.length - 1 ? "end" : "middle"}>{fmtDay(days[i])}</text>
         ))}
       </svg>
@@ -38,10 +38,10 @@ export function DayChart({ days, bar, line, barLabel, lineLabel, format = num, h
 }
 
 /** One thin bar split into coloured parts, for shares (by creator, by placement). */
-export function SplitBar({ parts, className = "h-2.5" }: { parts: { key: string; value: number; color: string; title: string }[]; className?: string }) {
+export function SplitBar({ parts, className = "h-2" }: { parts: { key: string; value: number; color: string; title: string }[]; className?: string }) {
   const total = parts.reduce((s, p) => s + p.value, 0);
   return (
-    <div className={`flex w-full overflow-hidden rounded-full bg-line ${className}`}>
+    <div className={`flex w-full overflow-hidden rounded-sm bg-line ${className}`}>
       {total > 0 && parts.filter((p) => p.value > 0).map((p) => (
         <div key={p.key} className={`${p.color} h-full`} style={{ width: `${(p.value / total) * 100}%` }} title={p.title} />
       ))}

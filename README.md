@@ -103,3 +103,7 @@ To switch it on:
 3. Run `supabase/schema.sql` again if you have not since this was added.
 
 Until those keys exist, the Connect button does not show and everything works on report uploads.
+
+## Design
+
+The look follows one direction: the paper trail of a sale. Warm paper, ink text, one banknote-green accent, IBM Plex Sans with Plex Mono for figures, and dotted receipt lines between a name and its number. The design pass used the unslop skill by Damir Sokolovsky ([@heydamir](https://x.com/heydamir), https://github.com/heydamir/unslop, CC BY 4.0).

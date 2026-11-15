@@ -28,7 +28,7 @@ export function ImportForm({ productId }: { productId: string }) {
       <button className="btn-primary disabled:opacity-50" disabled={busy}>{busy ? "Importing…" : "Import CSV"}</button>
       {res && (
         <div className={`space-y-2 rounded-lg border p-4 text-xs ${res.ok ? "border-accent/40 bg-accent/10 text-accent" : "border-rose/40 bg-rose/10 text-rose"}`}>
-          <div className="text-sm font-semibold">{res.ok ? "Imported" : "Not imported"}</div>
+          <div className="text-sm font-medium">{res.ok ? "Imported" : "Not imported"}</div>
           <div>{res.message}</div>
           {res.days && <div className="font-mono">Days covered: {res.days}</div>}
           {res.columns && res.columns.length > 0 && <div className="font-mono text-ink-2">Columns read: {res.columns.join(", ")}</div>}

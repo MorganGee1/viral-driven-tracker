@@ -33,29 +33,29 @@ export default async function Settings({ params, searchParams }: { params: Promi
         <div className="label">Amazon pages</div>
         <p className="text-sm text-ink-2">The Amazon addresses creators can point a link at. They pick from this list and cannot type their own.</p>
         {pages.map((p) => (
-          <div key={p.id} className={`rounded-xl border border-line bg-panel-2 p-3 ${p.archived_at ? "opacity-60" : ""}`}>
+          <div key={p.id} className={`rounded-lg border border-line bg-panel-2 p-3 ${p.archived_at ? "opacity-60" : ""}`}>
             <form action={updatePage} className="grid grid-cols-1 gap-2 sm:grid-cols-[180px_1fr_auto]">
               <input type="hidden" name="id" value={p.id} /><input type="hidden" name="product_id" value={id} /><input type="hidden" name="back" value={back} />
               <input name="name" required maxLength={80} defaultValue={p.name} className="input" aria-label="Amazon page name" />
-              <input name="url" required defaultValue={p.url} className="input font-mono text-[11px]" aria-label="Amazon address" />
+              <input name="url" required defaultValue={p.url} className="input font-mono text-xs" aria-label="Amazon address" />
               <button className="btn-ghost">Save</button>
             </form>
             <form action={setPageArchived} className="mt-2 flex items-center gap-3">
               <input type="hidden" name="id" value={p.id} /><input type="hidden" name="product_id" value={id} /><input type="hidden" name="back" value={back} />
               <input type="hidden" name="archived" value={p.archived_at ? "0" : "1"} />
-              <button className="font-mono text-[11px] text-ink-3 underline-offset-2 hover:text-ink hover:underline">{p.archived_at ? "Restore" : "Remove from list"}</button>
-              <span className="font-mono text-[11px] text-ink-3">{used(p.id)} {used(p.id) === 1 ? "link uses" : "links use"} this page{p.archived_at ? " · removed, creators cannot pick it" : ""}</span>
+              <button className="font-mono text-xs text-ink-3 underline-offset-2 hover:text-ink hover:underline">{p.archived_at ? "Restore" : "Remove from list"}</button>
+              <span className="font-mono text-xs text-ink-3">{used(p.id)} {used(p.id) === 1 ? "link uses" : "links use"} this page{p.archived_at ? " · removed, creators cannot pick it" : ""}</span>
             </form>
           </div>
         ))}
         {pages.length === 0 && <div className="font-mono text-xs text-amber">No Amazon page yet. Creators cannot make links until there is one.</div>}
-        <form action={addPage} className="grid grid-cols-1 gap-2 rounded-xl border border-dashed border-line-2 p-3 sm:grid-cols-[180px_1fr_auto]">
+        <form action={addPage} className="grid grid-cols-1 gap-2 rounded-lg border border-dashed border-line-2 p-3 sm:grid-cols-[180px_1fr_auto]">
           <input type="hidden" name="product_id" value={id} /><input type="hidden" name="back" value={back} />
           <input name="name" required maxLength={80} placeholder="Name, e.g. Mascara" className="input" aria-label="New Amazon page name" />
-          <input name="url" required placeholder="https://www.amazon.com/dp/B0XXXXXXXX" className="input font-mono text-[11px]" aria-label="New Amazon address" />
+          <input name="url" required placeholder="https://www.amazon.com/dp/B0XXXXXXXX" className="input font-mono text-xs" aria-label="New Amazon address" />
           <button className="btn-primary">Add page</button>
         </form>
-        <p className="font-mono text-[11px] leading-relaxed text-ink-3">Changing an address changes where every link made for that page goes, including ones already posted. Removing a page only hides it from the list. Links already made for it keep working.</p>
+        <p className="font-mono text-xs leading-relaxed text-ink-3">Changing an address changes where every link made for that page goes, including ones already posted. Removing a page only hides it from the list. Links already made for it keep working.</p>
       </div>
 
       <div className="card space-y-4 p-5">
@@ -85,7 +85,7 @@ export default async function Settings({ params, searchParams }: { params: Promi
                 </div>
               </form>
             )}
-            <div className="font-mono text-[11px] leading-relaxed text-ink-3">
+            <div className="font-mono text-xs leading-relaxed text-ink-3">
               {amazon.last_sync_at
                 ? <>Last sync {new Date(amazon.last_sync_at).toLocaleString("en-GB", { timeZone: "America/Los_Angeles", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })} Los Angeles time · {amazon.last_sync_status === "ok" ? `${amazon.last_sync_rows ?? 0} rows` : <span className="text-rose">failed: {amazon.last_sync_status}</span>}</>
                 : "Not synced yet."}
@@ -118,14 +118,14 @@ export default async function Settings({ params, searchParams }: { params: Promi
         )}
 
         <details>
-          <summary className="cursor-pointer select-none font-mono text-[11px] text-ink-3 hover:text-ink">Tag template (advanced)</summary>
+          <summary className="cursor-pointer select-none font-mono text-xs text-ink-3 hover:text-ink">Tag template (advanced)</summary>
           <form action={setTagTemplate} className="mt-3 space-y-2">
             <input type="hidden" name="brand_id" value={brand.id} /><input type="hidden" name="back" value={back} />
             <label className="label block" htmlFor="tpl">Attribution tag template, shared by every product of {brand.name}</label>
-            <textarea id="tpl" name="tag_template" rows={3} defaultValue={brand.tag_template ?? ""} className="input font-mono text-[11px]"
+            <textarea id="tpl" name="tag_template" rows={3} defaultValue={brand.tag_template ?? ""} className="input font-mono text-xs"
               placeholder="maas=maas_adg_api_...&ref_=aa_maas&aa_campaignid=...&aa_adgroupid=...&aa_creativeid=..." />
             <button className="btn-ghost">Save template</button>
-            <p className="font-mono text-[11px] leading-relaxed text-ink-3">Connecting to Amazon fills this in for you. With a template saved, the tracker puts the product and the link&apos;s own ID into every new link, and Amazon reports sales per link.</p>
+            <p className="font-mono text-xs leading-relaxed text-ink-3">Connecting to Amazon fills this in for you. With a template saved, the tracker puts the product and the link&apos;s own ID into every new link, and Amazon reports sales per link.</p>
           </form>
         </details>
       </div>

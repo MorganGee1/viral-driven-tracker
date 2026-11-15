@@ -7,7 +7,7 @@ export default function Privacy() {
   return (
     <div className="prose-legal mx-auto max-w-3xl px-5 py-16 md:py-24">
       <div className="label mb-3">Legal</div>
-      <h1 className="text-4xl font-extrabold tracking-tight">Privacy policy</h1>
+      <h1 className="text-4xl font-medium">Privacy policy</h1>
       <p className="font-mono text-xs text-ink-3">Last updated {SITE.updated}</p>
 
       <p>
