@@ -32,7 +32,7 @@ Links are never deleted, only archived, so an old link in a bio keeps counting a
 1. supabase.com > New project > name `viral-driven-tracker`.
 2. SQL Editor > New query > paste all of `supabase/schema.sql` > Run.
    It is safe to run again, and it upgrades a database made with the 9 Nov version without losing anything.
-3. Project Settings > API: copy the **Project URL**, the **anon public** key and the **service_role** key.
+3. Project Settings > API keys: copy the **Project URL** and the **publishable** key (older projects call it the anon public key). Both are safe to expose. The secret key is only needed later, for the Amazon Ads API.
 
 ### 2. Discord sign-in
 1. discord.com/developers/applications > New Application > `Viral Driven Tracker`.
@@ -47,7 +47,7 @@ Links are never deleted, only archived, so an old link in a bio keeps counting a
 1. vercel.com/new > import `MorganGee1/viral-driven-tracker`.
 2. Environment variables (see `.env.example`):
    - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` (the publishable key)
    - `NEXT_PUBLIC_SITE_URL` = `https://tracker.viraldrivenmedia.com`
 3. Deploy, then Settings > Domains > add `tracker.viraldrivenmedia.com`.
 

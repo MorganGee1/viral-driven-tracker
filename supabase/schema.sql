@@ -625,3 +625,28 @@ grant execute on function
   to authenticated, service_role;
 grant execute on function public.invite_preview(text) to anon, authenticated, service_role;
 grant select, insert, update, delete on public.amazon_connections to service_role;
+
+-- Supabase lets signed-out visitors call every function in public by default. Take that away:
+-- the only thing a signed-out visitor may call is the invite preview on the join page.
+revoke execute on function
+  public.my_role(), public.is_team(), public.is_owner(), public.is_member(uuid),
+  public.handle_new_user(), public.handle_user_updated(), public.links_guard(),
+  public.build_tag(text, text, text, text),
+  public.invite_preview(text), public.redeem_invite(text),
+  public.link_totals(uuid, uuid, date, date), public.product_totals(date, date),
+  public.daily_totals(uuid, uuid, date, date, uuid[]),
+  public.bonus_total(uuid, uuid, date, date), public.data_through(uuid, uuid),
+  public.amazon_status(uuid), public.apply_tag_template(uuid)
+  from public, anon;
+-- Trigger functions are run by the database itself. Nobody needs to call them directly.
+revoke execute on function public.handle_new_user(), public.handle_user_updated(), public.links_guard() from authenticated;
+grant execute on function public.invite_preview(text) to anon, authenticated, service_role;
+grant execute on function public.build_tag(text, text, text, text) to authenticated, service_role;
+
+-- Pin where these functions look things up, so nothing can be swapped underneath them.
+alter function public.build_tag(text, text, text, text) set search_path = public;
+alter function public.link_totals(uuid, uuid, date, date) set search_path = public;
+alter function public.product_totals(date, date) set search_path = public;
+alter function public.daily_totals(uuid, uuid, date, date, uuid[]) set search_path = public;
+alter function public.bonus_total(uuid, uuid, date, date) set search_path = public;
+alter function public.data_through(uuid, uuid) set search_path = public;
