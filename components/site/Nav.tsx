@@ -37,7 +37,7 @@ export function SiteNav() {
           <Link href="/contact" className="btn-primary hidden sm:inline-flex">Talk to us</Link>
           <details className="relative lg:hidden">
             <summary className="btn-ghost cursor-pointer list-none [&::-webkit-details-marker]:hidden">Menu</summary>
-            <div className="absolute right-0 top-11 w-56 rounded-xl border border-line bg-panel p-2 shadow-[0_8px_24px_rgb(31_27_22/0.08)]">
+            <div className="absolute right-0 top-11 w-56 rounded-xl border border-line bg-panel p-2 shadow-[0_8px_24px_rgb(0_0_0/0.5)]">
               {LINKS.map(([href, label]) => <Link key={href} href={href} className="block rounded-lg px-3 py-2 text-sm text-ink-2 transition-colors hover:bg-panel-2 hover:text-ink">{label}</Link>)}
               <div className="my-2 border-t border-line" />
               <Link href="/login" className="block rounded-lg px-3 py-2 text-sm text-ink-2 transition-colors hover:bg-panel-2 hover:text-ink">Sign in</Link>

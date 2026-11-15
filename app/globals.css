@@ -1,28 +1,29 @@
 @import "tailwindcss";
 
 /*
-  Direction: the paper trail of a sale. Receipt paper, ink text, one banknote-green accent.
-  Chrome stays quiet. Colour only shows up where it means something (a figure, a share, a state).
+  Direction: dark, with one purple accent. The page is a near-black tinted a little toward violet,
+  text is off-white, and purple only shows up where it means something (a figure, a share, a state).
+  No gradients and no glows. The one bright object is the paper receipt in the hero.
 */
 @theme {
-  /* warm paper ramp */
-  --color-bg: #f7f4ee;
-  --color-panel: #fdfbf7;
-  --color-panel-2: #efe9df;
-  --color-line: rgb(31 27 22 / 0.1);
-  --color-line-2: rgb(31 27 22 / 0.2);
+  /* dark ramp, tinted slightly toward the accent */
+  --color-bg: #0e0d13;
+  --color-panel: #15141c;
+  --color-panel-2: #1e1c28;
+  --color-line: rgb(239 238 245 / 0.08);
+  --color-line-2: rgb(239 238 245 / 0.16);
   /* three text roles */
-  --color-ink: #1f1b16;
-  --color-ink-2: #5e554a;
-  --color-ink-3: #736a5e;
-  /* the one accent: banknote green */
-  --color-accent: #17603f;
-  --color-accent-2: #114b31;
-  /* states, and the quieter inks used when a chart has to tell series apart */
-  --color-rose: #a5382b;
-  --color-amber: #8a5d0f;
-  --color-violet: #3f4c7d;
-  --color-sky: #5c8482;
+  --color-ink: #efeef5;
+  --color-ink-2: #a9a6b8;
+  --color-ink-3: #827e96;
+  /* the one accent: purple. The lighter shade is for text and small marks, the deeper one for large fills. */
+  --color-accent: #a78bfa;
+  --color-accent-2: #7c3aed;
+  /* states, and the quieter colours used when a chart has to tell series apart */
+  --color-rose: #e5686a;
+  --color-amber: #d9a441;
+  --color-violet: #6b9bd6;
+  --color-sky: #5fb3a8;
 
   --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -31,15 +32,15 @@
   --default-transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* The signed-in app sits on plainer, greyer paper so the numbers carry the colour. */
+/* The signed-in app sits on plain graphite so the numbers carry the colour. */
 .app-theme {
-  --color-bg: #f8f7f5;
-  --color-panel: #ffffff;
-  --color-panel-2: #f1efec;
+  --color-bg: #0f0f12;
+  --color-panel: #16161a;
+  --color-panel-2: #1f1f25;
 }
 
 @layer base {
-  html { color-scheme: light; }
+  html { color-scheme: dark; }
   body {
     background: var(--color-bg);
     color: var(--color-ink);
@@ -56,10 +57,10 @@
   .label { @apply font-mono text-xs text-ink-3; }
 
   .btn { @apply inline-flex h-9 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition-colors active:scale-[0.98]; }
-  .btn-primary { @apply inline-flex h-9 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition-colors active:scale-[0.98] bg-ink text-panel hover:bg-[#3a342c]; }
+  .btn-primary { @apply inline-flex h-9 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition-colors active:scale-[0.98] bg-ink text-bg hover:bg-white; }
   .btn-ghost { @apply inline-flex h-9 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition-colors active:scale-[0.98] border border-line-2 bg-panel text-ink hover:bg-panel-2; }
   .btn-danger { @apply inline-flex h-9 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition-colors active:scale-[0.98] border border-rose/40 text-rose hover:bg-rose/10; }
-  .btn-accent { @apply bg-accent text-white hover:bg-accent-2; }
+  .btn-accent { @apply bg-accent-2 text-white hover:bg-accent; }
   .btn-lg { @apply h-12 px-5 text-base; }
   .btn-sm { @apply h-8 px-3 text-xs; }
 
@@ -80,9 +81,15 @@
   .leader { @apply min-w-4 flex-1 self-end border-b border-dotted border-ink-3/60; margin-bottom: 0.35em; }
 
   /* The receipt in the hero: thermal paper with a torn bottom edge. */
-  .receipt-wrap { filter: drop-shadow(0 1px 1px rgb(31 27 22 / 0.08)) drop-shadow(0 12px 24px rgb(31 27 22 / 0.14)); }
+  .receipt-wrap { filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.4)) drop-shadow(0 16px 32px rgb(0 0 0 / 0.5)); }
+  /* The receipt keeps its own paper and ink whatever the page theme is. */
   .receipt {
-    background: #fffdf8;
+    background: #f4f1ea;
+    --color-ink: #1f1b16;
+    --color-ink-2: #5e554a;
+    --color-ink-3: #736a5e;
+    --color-accent: #6d28d9;
+    color: var(--color-ink);
     --tooth: 8px;
     mask:
       conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / var(--tooth) 51% repeat-x,

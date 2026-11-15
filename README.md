@@ -106,4 +106,4 @@ Until those keys exist, the Connect button does not show and everything works on
 
 ## Design
 
-The look follows one direction: the paper trail of a sale. Warm paper, ink text, one banknote-green accent, IBM Plex Sans with Plex Mono for figures, and dotted receipt lines between a name and its number. The design pass used the unslop skill by Damir Sokolovsky ([@heydamir](https://x.com/heydamir), https://github.com/heydamir/unslop, CC BY 4.0).
+Dark, with one purple accent. The page is a near-black tinted slightly toward violet, text is off-white, and purple only appears where it means something. No gradients or glows. Type is IBM Plex Sans with Plex Mono for figures, and names are joined to their numbers by dotted receipt lines. The one bright object is the paper receipt in the hero. The design pass used the unslop skill by Damir Sokolovsky ([@heydamir](https://x.com/heydamir), https://github.com/heydamir/unslop, CC BY 4.0).

@@ -57,8 +57,8 @@ export default async function Links({ params, searchParams }: { params: Promise<
           </select></label>
         <label className="block"><span className="label mb-1 block">Search</span>
           <input name="q" defaultValue={sp.q ?? ""} placeholder="Creator, link, handle, ID" className="input w-48 py-1.5" /></label>
-        <label className="flex items-center gap-2 pb-2 text-sm text-ink-2"><input type="checkbox" name="untracked" value="1" defaultChecked={sp.untracked === "1"} className="accent-[#35d07f]" />Not tracked yet ({untracked})</label>
-        <label className="flex items-center gap-2 pb-2 text-sm text-ink-2"><input type="checkbox" name="archived" value="1" defaultChecked={sp.archived === "1"} className="accent-[#35d07f]" />Show archived</label>
+        <label className="flex items-center gap-2 pb-2 text-sm text-ink-2"><input type="checkbox" name="untracked" value="1" defaultChecked={sp.untracked === "1"} className="accent-accent-2" />Not tracked yet ({untracked})</label>
+        <label className="flex items-center gap-2 pb-2 text-sm text-ink-2"><input type="checkbox" name="archived" value="1" defaultChecked={sp.archived === "1"} className="accent-accent-2" />Show archived</label>
       </AutoForm>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">

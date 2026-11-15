@@ -184,7 +184,7 @@ export default function Home() {
                         </div>
                         <div className="mt-1 truncate font-mono text-xs text-ink-3">{where}</div>
                       </div>
-                      <span className="inline-flex h-6 shrink-0 items-center rounded bg-ink px-2 font-mono text-xs text-panel">Copy</span>
+                      <span className="inline-flex h-6 shrink-0 items-center rounded bg-ink px-2 font-mono text-xs text-bg">Copy</span>
                     </div>
                   ))}
                 </div>

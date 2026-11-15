@@ -17,19 +17,19 @@ export function DayChart({ days, bar, line, barLabel, lineLabel, format = num, h
   return (
     <div>
       <div className="mb-2 flex flex-wrap items-center gap-x-5 gap-y-1 font-mono text-xs text-ink-3">
-        <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-sm bg-accent" />{barLabel} · peak {format(Math.max(...bar, 0))}</span>
+        <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-sm bg-accent-2" />{barLabel} · peak {format(Math.max(...bar, 0))}</span>
         {line && lineLabel && <span className="flex items-center gap-2"><span className="h-0.5 w-4 bg-ink" />{lineLabel} · peak {num(Math.max(...line, 0))}</span>}
       </div>
       <svg viewBox={`0 0 ${w} ${h}`} className="w-full" role="img" aria-label={`${barLabel} per day`}>
-        <line x1="0" x2={w} y1={h - padB} y2={h - padB} stroke="rgb(31 27 22 / 0.15)" />
+        <line x1="0" x2={w} y1={h - padB} y2={h - padB} className="stroke-line-2" />
         {bar.map((v, i) => (
-          <rect key={days[i]} x={(i + 0.5) * slot - bw / 2} y={y(v, maxBar)} width={bw} height={Math.max(0, h - padB - y(v, maxBar))} rx="2" fill="#17603f">
+          <rect key={days[i]} x={(i + 0.5) * slot - bw / 2} y={y(v, maxBar)} width={bw} height={Math.max(0, h - padB - y(v, maxBar))} rx="2" className="fill-accent-2">
             <title>{`${fmtDay(days[i])}: ${format(v)} ${barLabel.toLowerCase()}${line && lineLabel ? `, ${num(line[i])} ${lineLabel.toLowerCase()}` : ""}`}</title>
           </rect>
         ))}
-        {pts && <polyline points={pts} fill="none" stroke="#1f1b16" strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />}
+        {pts && <polyline points={pts} fill="none" className="stroke-ink" strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />}
         {ticks.map((i) => (
-          <text key={i} x={Math.min(w - 4, Math.max(4, (i + 0.5) * slot))} y={h - 5} fill="#736a5e" fontSize="13" fontFamily="IBM Plex Mono, ui-monospace, monospace"
+          <text key={i} x={Math.min(w - 4, Math.max(4, (i + 0.5) * slot))} y={h - 5} className="fill-ink-3" fontSize="13" fontFamily="IBM Plex Mono, ui-monospace, monospace"
             textAnchor={i === 0 ? "start" : i === days.length - 1 ? "end" : "middle"}>{fmtDay(days[i])}</text>
         ))}
       </svg>

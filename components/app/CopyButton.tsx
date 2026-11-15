@@ -19,7 +19,7 @@ export function CopyButton({ text, label = "Copy link", small = false }: { text:
   }
   return (
     <button type="button" onClick={copy}
-      className={`btn shrink-0 ${small ? "btn-sm" : ""} ${done ? "bg-accent text-white" : "bg-ink text-panel hover:bg-[#3a342c]"}`}>
+      className={`btn shrink-0 ${small ? "btn-sm" : ""} ${done ? "bg-accent text-bg" : "bg-ink text-bg hover:bg-white"}`}>
       {done ? "Copied" : label}
     </button>
   );

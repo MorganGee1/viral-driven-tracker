@@ -59,7 +59,7 @@ export function Receipt({ className = "" }: { className?: string }) {
 
 export function ProductView({ className = "" }: { className?: string }) {
   return (
-    <div className={`card overflow-hidden shadow-[0_8px_24px_rgb(31_27_22/0.06)] ${className}`}>
+    <div className={`card overflow-hidden ${className}`}>
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-line px-5 py-3">
         <div className="flex items-center gap-2 text-sm">
           <span className="text-ink-3">Northwind Beauty</span>
