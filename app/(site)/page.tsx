@@ -114,8 +114,8 @@ export default function Home() {
   return (
     <>
       <section className="border-b border-line">
-        <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 px-5 py-16 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:py-24">
-          <div>
+        <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 px-5 py-16 xl:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] xl:py-24">
+          <div className="max-w-2xl xl:max-w-none">
             <h1 className="text-[40px] font-medium leading-[1.05] tracking-[-0.03em] md:text-6xl md:leading-[1.02]">
               Know which creator sold what on Amazon
             </h1>

@@ -102,11 +102,14 @@ export function ProductView({ className = "" }: { className?: string }) {
   );
 }
 
+/* Lays itself out by the room it is given, not the screen: side by side from 576px, stacked below that. */
 export function HeroVisual() {
   return (
-    <div className="relative">
-      <ProductView className="lg:mr-60" />
-      <Receipt className="relative z-10 -mt-3 ml-auto mr-3 rotate-2 lg:absolute lg:-right-4 lg:top-24 lg:mr-0 lg:mt-0 lg:rotate-3" />
+    <div className="@container w-full max-w-2xl xl:max-w-none">
+      <div className="relative">
+        <ProductView className="@xl:mr-60" />
+        <Receipt className="relative z-10 -mt-3 ml-auto mr-3 rotate-2 @xl:absolute @xl:-right-4 @xl:top-24 @xl:mr-0 @xl:mt-0 @xl:rotate-3" />
+      </div>
     </div>
   );
 }
