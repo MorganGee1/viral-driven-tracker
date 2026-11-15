@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getMe } from "@/lib/data";
 import { type Candidate, type Region, amazonConfigured, decrypt, finishConnection, refreshAccess, syncBrand } from "@/lib/amazon";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { deepSummary, deepWriter, syncDeepLinks } from "@/lib/deeplinks";
+import { linktwinConfigured } from "@/lib/linktwin";
 import {
   PLACEMENTS, PLATFORMS, cleanAmazonUrl, defaultLinkName, isTeamRole, parseCsv, toIsoDate,
   type Placement, type Platform,
@@ -30,6 +32,8 @@ function withParam(path: string, key: string, value: string) {
 function fail(path: string, message: string): never {
   redirect(withParam(path, "error", message));
 }
+/** Adds the deep link result to the green bar text, when there is one. */
+const withDeep = (text: string, deep: string) => (deep ? `${text} ${deep}.` : text);
 
 async function requireMe() {
   const me = await getMe();
@@ -86,8 +90,9 @@ export async function setTagTemplate(fd: FormData) {
   const { error } = await supabase.from("brands").update({ tag_template: tpl || null }).eq("id", id);
   if (error) fail(back, "Could not save the tag template.");
   if (tpl) await supabase.rpc("apply_tag_template", { p_brand: id });
+  const deep = tpl ? deepSummary(await syncDeepLinks(supabase, { brandId: id })) : "";
   revalidatePath("/app", "layout");
-  redirect(withParam(back, "ok", tpl ? "Tag template saved. New links are tagged automatically, and links that were waiting are tagged now." : "Tag template removed"));
+  redirect(withParam(back, "ok", tpl ? withDeep("Tag template saved. New links are tagged automatically, and links that were waiting are tagged now.", deep) : "Tag template removed"));
 }
 
 // ---------- products and Amazon pages ----------
@@ -161,8 +166,10 @@ export async function updatePage(fd: FormData) {
   const supabase = await createClient();
   const { error } = await supabase.from("amazon_pages").update({ name, url }).eq("id", id);
   if (error) fail(back, "Could not save the Amazon page.");
+  // deep links for this page now point at the old address: move them
+  const deep = deepSummary(await syncDeepLinks(supabase, { productId: product_id }));
   revalidatePath(`/app/products/${product_id}`, "layout");
-  redirect(withParam(back, "ok", "Amazon page saved"));
+  redirect(withParam(back, "ok", withDeep("Amazon page saved.", deep)));
 }
 
 /** Removing a page hides it from creators. Links already made for it keep working. */
@@ -238,6 +245,12 @@ export async function createLink(fd: FormData) {
     .insert({ product_id, page_id, owner_id, platform, account, placement, name, note })
     .select("id").single();
   if (error || !data) fail(back, "Could not make the link. If this keeps happening, ask your manager to check you were added to this product.");
+  // If this product uses deep links and the link came out tagged, make its deep link straight away.
+  // A LinkTwin hiccup must never stop a link being made, so any failure here is left for the next run.
+  try {
+    const writer = deepWriter(me.role, supabase);
+    if (writer) await syncDeepLinks(writer, { productId: product_id, linkIds: [data.id] });
+  } catch {}
   revalidatePath(`/app/products/${product_id}`, "layout");
   redirect(withParam(back, "new", data.id));
 }
@@ -283,8 +296,40 @@ export async function setTag(fd: FormData) {
   const supabase = await createClient();
   const { error } = await supabase.from("links").update({ amazon_tag: tag || null }).eq("id", id);
   if (error) fail(back, "Could not save the tag.");
+  const deep = tag ? deepSummary(await syncDeepLinks(supabase, { productId: product_id, linkIds: [id] })) : "";
   revalidatePath(`/app/products/${product_id}`, "layout");
-  redirect(withParam(back, "ok", tag ? "Tag saved. The link is tracked." : "Tag removed"));
+  redirect(withParam(back, "ok", tag ? withDeep("Tag saved. The link is tracked.", deep) : "Tag removed"));
+}
+
+// ---------- deep links (LinkTwin) ----------
+/** Switches deep links on or off for one product. Turning it on makes them for the links that are already tracked. */
+export async function setDeepLinks(fd: FormData) {
+  await requireTeam();
+  const id = str(fd, "id");
+  const back = backTo(fd, `/app/products/${id}/settings`);
+  const on = str(fd, "on") === "1";
+  if (on && !linktwinConfigured()) fail(back, "LinkTwin is not set up on this site yet. Add LINKTWIN_API_KEY in Vercel and redeploy.");
+  const supabase = await createClient();
+  const { error } = await supabase.from("products").update({ deep_links: on }).eq("id", id);
+  if (error) fail(back, "Could not change deep links.");
+  const deep = on ? deepSummary(await syncDeepLinks(supabase, { productId: id }, 30)) : "";
+  revalidatePath(`/app/products/${id}`, "layout");
+  redirect(withParam(back, "ok", on
+    ? withDeep("Deep links are on. Creators now copy a link that opens the Amazon app.", deep)
+    : "Deep links are off. Creators copy the plain Amazon link again. Deep links already posted keep working."));
+}
+
+/** Makes the deep links that are still missing for a product, thirty at a time. */
+export async function makeDeepLinks(fd: FormData) {
+  await requireTeam();
+  const id = str(fd, "id");
+  const back = backTo(fd, `/app/products/${id}/settings`);
+  if (!linktwinConfigured()) fail(back, "LinkTwin is not set up on this site yet. Add LINKTWIN_API_KEY in Vercel and redeploy.");
+  const supabase = await createClient();
+  const res = await syncDeepLinks(supabase, { productId: id }, 30);
+  revalidatePath(`/app/products/${id}`, "layout");
+  const text = deepSummary(res);
+  redirect(withParam(back, res.failed ? "error" : "ok", text ? `${text}.` : "Every tracked link already has its deep link."));
 }
 
 // ---------- people ----------
@@ -442,8 +487,9 @@ export async function pickAmazonAdvertiser(fd: FormData) {
     message = e instanceof Error ? e.message : "Amazon refused.";
   }
   if (message) fail(back, message);
+  const deep = deepSummary(await syncDeepLinks(await createClient(), { brandId }));
   revalidatePath("/app", "layout");
-  redirect(withParam(back, "ok", `Now using ${pick.advertiserName}. New links are tagged automatically.`));
+  redirect(withParam(back, "ok", withDeep(`Now using ${pick.advertiserName}. New links are tagged automatically.`, deep)));
 }
 
 export async function syncAmazon(fd: FormData) {
@@ -452,6 +498,7 @@ export async function syncAmazon(fd: FormData) {
   const back = backTo(fd, `/app/brands/${brandId}`);
   if (!amazonConfigured()) fail(back, "The Amazon Ads API is not set up on this site yet.");
   const res = await syncBrand(brandId);
+  if (res.ok) await syncDeepLinks(await createClient(), { brandId });
   revalidatePath("/app", "layout");
   redirect(withParam(back, res.ok ? "ok" : "error", res.message));
 }

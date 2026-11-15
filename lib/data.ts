@@ -7,12 +7,13 @@ export type Profile = {
   avatar_url: string | null; role: Role; created_at: string;
 };
 export type Brand = { id: string; name: string; marketplace: string; tag_template: string | null };
-export type Product = { id: string; brand_id: string; name: string; status: "active" | "archived"; created_at: string };
+export type Product = { id: string; brand_id: string; name: string; status: "active" | "archived"; deep_links: boolean; created_at: string };
 export type AmazonPage = { id: string; product_id: string; name: string; url: string; archived_at: string | null };
 export type Link = {
   id: string; short_id: string; product_id: string; page_id: string; owner_id: string;
   platform: Platform; account: string; placement: Placement; name: string; note: string | null;
   amazon_tag: string | null; archived_at: string | null; created_at: string;
+  deep_url: string | null; deep_id: string | null; deep_dest: string | null;
 };
 export type Invite = {
   id: string; code: string; name: string; role: "creator" | "team"; product_id: string | null;
@@ -21,7 +22,7 @@ export type Invite = {
 export type DayRow = Totals & { day: string };
 
 const PROFILE_COLS = "id, username, discord_username, discord_id, avatar_url, role, created_at";
-const LINK_COLS = "id, short_id, product_id, page_id, owner_id, platform, account, placement, name, note, amazon_tag, archived_at, created_at";
+const LINK_COLS = "id, short_id, product_id, page_id, owner_id, platform, account, placement, name, note, amazon_tag, archived_at, created_at, deep_url, deep_id, deep_dest";
 
 type Res<T> = { data: T[] | null; error: { message: string } | null };
 
@@ -50,7 +51,7 @@ export const getNav = cache(async () => {
   const supabase = await createClient();
   const [brands, products] = await Promise.all([
     fetchAll<Brand>((a, b) => supabase.from("brands").select("id, name, marketplace, tag_template").order("name").order("id").range(a, b)),
-    fetchAll<Product>((a, b) => supabase.from("products").select("id, brand_id, name, status, created_at").order("name").order("id").range(a, b)),
+    fetchAll<Product>((a, b) => supabase.from("products").select("id, brand_id, name, status, deep_links, created_at").order("name").order("id").range(a, b)),
   ]);
   return { brands, products };
 });
@@ -58,7 +59,7 @@ export const getNav = cache(async () => {
 export const getProduct = cache(async (id: string) => {
   if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
   const supabase = await createClient();
-  const { data: product } = await supabase.from("products").select("id, brand_id, name, status, created_at").eq("id", id).maybeSingle();
+  const { data: product } = await supabase.from("products").select("id, brand_id, name, status, deep_links, created_at").eq("id", id).maybeSingle();
   if (!product) return null;
   const [{ data: brand }, { data: pages, error }] = await Promise.all([
     supabase.from("brands").select("id, name, marketplace, tag_template").eq("id", product.brand_id).maybeSingle(),

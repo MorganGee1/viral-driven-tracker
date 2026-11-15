@@ -11,7 +11,7 @@ import { NewLinkForm } from "@/components/app/NewLinkForm";
 import { PeriodSelect } from "@/components/app/PeriodSelect";
 import { CopyButton } from "@/components/app/CopyButton";
 import {
-  ZERO, conversion, currencyFor, daySeries, fmtDay, isTeamRole, money, num, resolvePeriod, share, sumTotals, taggedUrl, addDays, todayLA,
+  ZERO, conversion, copyUrl, currencyFor, daySeries, fmtDay, isTeamRole, money, num, resolvePeriod, share, sumTotals, addDays, todayLA,
 } from "@/lib/util";
 
 type SP = { period?: string; from?: string; to?: string; creator?: string; ok?: string; error?: string; new?: string };
@@ -46,9 +46,10 @@ async function CreatorLinks({ id, sp, me }: { id: string; sp: SP; me: Profile })
   const livePages = pages.filter((p) => !p.archived_at);
   const back = `/app/products/${id}${period.key !== "month" && period.key !== "custom" ? `?period=${period.key}` : ""}`;
   const fresh = sp.new ? links.find((l) => l.id === sp.new) : undefined;
-  const urlOf = (l: (typeof links)[number]) => taggedUrl(pageOf.get(l.page_id)?.url ?? "", l.amazon_tag);
+  const addr = (l: (typeof links)[number]) => copyUrl(product.deep_links, l, pageOf.get(l.page_id)?.url ?? "");
+  const urlOf = (l: (typeof links)[number]) => addr(l).url;
   const row = (l: (typeof links)[number]) => (
-    <LinkRow key={l.id} link={l} url={urlOf(l)} pageName={pages.length > 1 ? pageOf.get(l.page_id)?.name ?? null : null}
+    <LinkRow key={l.id} link={l} url={urlOf(l)} plainUrl={addr(l).deep ? addr(l).plain : undefined} deepWaiting={addr(l).waiting} pageName={pages.length > 1 ? pageOf.get(l.page_id)?.name ?? null : null}
       totals={totals.get(l.id) ?? ZERO} cur={cur} team={false} back={back} fresh={l.id === sp.new} />
   );
 
@@ -62,6 +63,8 @@ async function CreatorLinks({ id, sp, me }: { id: string; sp: SP; me: Profile })
             <div className="min-w-0 flex-1 truncate rounded-lg bg-bg px-3 py-2 font-mono text-xs text-ink-2">{urlOf(fresh)}</div>
             <CopyButton text={urlOf(fresh)} />
           </div>
+          {addr(fresh).deep && <p className="mt-2 text-xs text-ink-2">This link opens the Amazon app on a phone, where the shopper is already signed in.</p>}
+          {addr(fresh).waiting && <p className="mt-2 text-xs text-ink-2">The app-opening link for this one is still being made. This plain Amazon link works in the meantime.</p>}
           {!fresh.amazon_tag && <p className="mt-2 text-xs text-amber">Tracking has not been attached to this link yet. Your manager does that. Wait for it to show as tracked before you post it, or its sales will not count for you.</p>}
         </div>
       )}

@@ -104,6 +104,22 @@ To switch it on:
 
 Until those keys exist, the Connect button does not show and everything works on report uploads.
 
+## Deep links (LinkTwin)
+
+Optional. A deep link opens the Amazon app on a phone, where the shopper is already signed in, instead of the browser inside Instagram or TikTok.
+
+1. In Vercel > Environment variables add `LINKTWIN_API_KEY` (LinkTwin dashboard > API), then redeploy. `LINKTWIN_DOMAIN` is optional, for a branded domain already added in LinkTwin.
+2. In the tracker open a product > Settings > Deep links > Switch deep links on.
+
+What happens after that:
+
+- Every tracked, live link of that product gets a LinkTwin link pointing at its full tagged Amazon address. Creators copy that one. The plain Amazon link stays on the card as a fallback.
+- A link gets its deep link the moment its Amazon tag is attached. If the tag or the Amazon page address changes later, the same deep link is moved, so links already posted keep working.
+- If LinkTwin does not answer, the link is still made with the plain address, and Settings shows a button to make the missing deep links.
+- Only the team and the server can write a deep link. Creators cannot change their own.
+- Links that come out tagged the moment a creator makes them (once a brand has a tag template) get their deep link instantly only if `SUPABASE_SERVICE_ROLE_KEY` is set. Without it they wait for the next team action or the nightly job.
+- Switching deep links off sends creators back to the plain Amazon link. Deep links already posted keep working.
+
 ## Design
 
 Dark, with one purple accent. The page is a near-black tinted slightly toward violet, text is off-white, and purple only appears where it means something. No gradients or glows. Type is IBM Plex Sans with Plex Mono for figures, and names are joined to their numbers by dotted receipt lines. The one bright object is the paper receipt in the hero. The design pass used the unslop skill by Damir Sokolovsky ([@heydamir](https://x.com/heydamir), https://github.com/heydamir/unslop, CC BY 4.0).

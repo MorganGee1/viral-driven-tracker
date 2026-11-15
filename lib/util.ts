@@ -55,6 +55,16 @@ export const conversion = (purchases: number, clicks: number) => (clicks > 0 ? `
 
 // ---------- the link a creator copies ----------
 /** The plain Amazon address with the tracking tag on the end. No redirect. */
+/**
+ * The address a creator should copy for a link. With deep links on for the product and a deep link made,
+ * that is the deep link (it opens the Amazon app). Otherwise it is the plain tagged Amazon address.
+ */
+export function copyUrl(deepLinksOn: boolean, link: { deep_url: string | null; amazon_tag: string | null }, pageUrl: string) {
+  const plain = taggedUrl(pageUrl, link.amazon_tag);
+  const deep = deepLinksOn && link.deep_url ? link.deep_url : null;
+  return { url: deep ?? plain, plain, deep: !!deep, waiting: deepLinksOn && !deep && !!link.amazon_tag };
+}
+
 export function taggedUrl(pageUrl: string, tag: string | null | undefined) {
   if (!tag) return pageUrl;
   const clean = tag.trim().replace(/^[?&]+/, "");

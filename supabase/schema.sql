@@ -114,6 +114,8 @@ alter table public.products drop constraint if exists campaigns_status_check;
 alter table public.products drop constraint if exists products_status_check;
 update public.products set status = 'archived' where status not in ('active', 'archived');
 alter table public.products add constraint products_status_check check (status in ('active', 'archived'));
+-- Deep links: when on, each tracked link of this product also gets a LinkTwin link that opens the Amazon app.
+alter table public.products add column if not exists deep_links boolean not null default false;
 
 -- The Amazon addresses creators can point a link at (Lens calls these destinations).
 create table if not exists public.amazon_pages (
@@ -185,6 +187,11 @@ alter table public.links add column if not exists platform text not null default
 alter table public.links add column if not exists account text not null default '';
 alter table public.links add column if not exists name text not null default '';
 alter table public.links add column if not exists archived_at timestamptz;
+-- The LinkTwin deep link for this link: its address, LinkTwin's id for it, and the tagged Amazon address it was
+-- last pointed at (so the app knows when it needs updating). Only the team and the server write these.
+alter table public.links add column if not exists deep_url text;
+alter table public.links add column if not exists deep_id text;
+alter table public.links add column if not exists deep_dest text;
 
 -- upgrade old rows
 alter table public.links drop constraint if exists links_placement_check;
@@ -388,6 +395,9 @@ begin
                    where a.id = new.page_id and a.product_id = new.product_id and (staff or a.archived_at is null)) then
       raise exception 'That Amazon page is not available for this product';
     end if;
+    if not staff then
+      new.deep_url := null; new.deep_id := null; new.deep_dest := null;
+    end if;
     if not staff or new.amazon_tag is null then
       select b.tag_template into tpl from public.products p join public.brands b on b.id = p.brand_id where p.id = new.product_id;
       -- campaign = the product, ad group = this link, creative = this link.
@@ -404,7 +414,9 @@ begin
        new.owner_id <> old.owner_id or new.product_id <> old.product_id or new.page_id <> old.page_id
     or new.short_id <> old.short_id or new.amazon_tag is distinct from old.amazon_tag
     or new.platform <> old.platform or new.account <> old.account or new.placement <> old.placement
-    or new.created_at <> old.created_at) then
+    or new.created_at <> old.created_at
+    or new.deep_url is distinct from old.deep_url or new.deep_id is distinct from old.deep_id
+    or new.deep_dest is distinct from old.deep_dest) then
     raise exception 'You can rename, annotate or archive your own links. Nothing else can change.';
   end if;
   return new;

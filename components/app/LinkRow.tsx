@@ -4,9 +4,13 @@ import { CopyButton } from "@/components/app/CopyButton";
 import { PLACEMENTS, accountLabel, fmtDay, money, num, type Totals } from "@/lib/util";
 
 /** One tracking link: who, where, the address to copy, its numbers and the few things that can be changed. */
-export function LinkRow({ link, url, pageName, totals, cur, owner, team, back, fresh }: {
+export function LinkRow({ link, url, plainUrl, deepWaiting, pageName, totals, cur, owner, team, back, fresh }: {
   link: TLink; url: string; pageName: string | null; totals: Totals; cur: string;
   owner?: Profile; team: boolean; back: string; fresh?: boolean;
+  /** Set when `url` is a deep link: the plain Amazon address, kept as a fallback. */
+  plainUrl?: string;
+  /** The product uses deep links but this link's one has not been made yet. */
+  deepWaiting?: boolean;
 }) {
   const archived = !!link.archived_at;
   return (
@@ -16,6 +20,7 @@ export function LinkRow({ link, url, pageName, totals, cur, owner, team, back, f
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-medium">{link.name}</span>
             {link.amazon_tag ? <span className="pill-live">tracked</span> : <span className="pill border-amber/40 text-amber">not tracked yet</span>}
+            {plainUrl && <span className="pill-muted">opens the Amazon app</span>}
             {archived && <span className="pill-muted">archived</span>}
           </div>
           <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 font-mono text-xs text-ink-3">
@@ -37,6 +42,13 @@ export function LinkRow({ link, url, pageName, totals, cur, owner, team, back, f
         </div>
       </div>
       <div className="mt-3 truncate rounded-lg bg-bg px-3 py-2 font-mono text-xs text-ink-2" title={url}>{url}</div>
+      {plainUrl && (
+        <div className="mt-2 flex items-center gap-3 font-mono text-xs text-ink-3">
+          <span className="min-w-0 flex-1 truncate" title={plainUrl}>Plain Amazon link: {plainUrl}</span>
+          <CopyButton text={plainUrl} label="Copy plain" small quiet />
+        </div>
+      )}
+      {deepWaiting && <p className="mt-2 font-mono text-xs text-ink-3">The app-opening link for this one is still being made. The link above works in the meantime.</p>}
       <details className="mt-2">
         <summary className="cursor-pointer select-none font-mono text-xs text-ink-3 hover:text-ink">{team ? "Rename, tag or archive" : "Rename or archive"}</summary>
         <div className="mt-3 space-y-3">

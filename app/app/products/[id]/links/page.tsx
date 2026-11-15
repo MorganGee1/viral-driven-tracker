@@ -7,7 +7,7 @@ import { Flash } from "@/components/app/Flash";
 import { LinkRow } from "@/components/app/LinkRow";
 import { NewLinkForm } from "@/components/app/NewLinkForm";
 import { PeriodSelect } from "@/components/app/PeriodSelect";
-import { PLACEMENTS, PLACEMENT_KEYS, ZERO, currencyFor, isTeamRole, resolvePeriod, taggedUrl } from "@/lib/util";
+import { PLACEMENTS, PLACEMENT_KEYS, ZERO, copyUrl, currencyFor, isTeamRole, resolvePeriod } from "@/lib/util";
 
 type SP = { period?: string; q?: string; creator?: string; placement?: string; archived?: string; untracked?: string; show?: string; ok?: string; error?: string; new?: string };
 
@@ -16,7 +16,7 @@ export default async function Links({ params, searchParams }: { params: Promise<
   const sp = await searchParams;
   const me = (await getMe())!;
   if (!isTeamRole(me.role)) redirect(`/app/products/${id}`);
-  const { brand, pages } = (await getProduct(id))!;
+  const { product, brand, pages } = (await getProduct(id))!;
   const cur = currencyFor(brand.marketplace);
   const period = resolvePeriod({ period: sp.period });
   const [links, totals, members] = await Promise.all([
@@ -66,7 +66,7 @@ export default async function Links({ params, searchParams }: { params: Promise<
           <div className="label">{shown.length} of {links.length} links · numbers for {period.label.toLowerCase()}</div>
           {shown.length === 0 && <div className="card p-6 font-mono text-xs text-ink-3">{links.length === 0 ? "No links yet. Creators make their own after joining with an invite link." : "No links match."}</div>}
           {page.map((l) => (
-            <LinkRow key={l.id} link={l} url={taggedUrl(pageOf.get(l.page_id)?.url ?? "", l.amazon_tag)} pageName={pageOf.get(l.page_id)?.name ?? null}
+            <LinkRow key={l.id} link={l} {...((a) => ({ url: a.url, plainUrl: a.deep ? a.plain : undefined, deepWaiting: a.waiting }))(copyUrl(product.deep_links, l, pageOf.get(l.page_id)?.url ?? ""))} pageName={pageOf.get(l.page_id)?.name ?? null}
               totals={totals.get(l.id) ?? ZERO} cur={cur} owner={profiles.get(l.owner_id)} team back={back} fresh={l.id === sp.new} />
           ))}
           {shown.length > limit && (

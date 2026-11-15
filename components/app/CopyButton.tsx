@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 
-export function CopyButton({ text, label = "Copy link", small = false }: { text: string; label?: string; small?: boolean }) {
+export function CopyButton({ text, label = "Copy link", small = false, quiet = false }: { text: string; label?: string; small?: boolean; quiet?: boolean }) {
   const [done, setDone] = useState(false);
   async function copy() {
     try {
@@ -19,7 +19,7 @@ export function CopyButton({ text, label = "Copy link", small = false }: { text:
   }
   return (
     <button type="button" onClick={copy}
-      className={`btn shrink-0 ${small ? "btn-sm" : ""} ${done ? "bg-accent text-bg" : "bg-ink text-bg hover:bg-white"}`}>
+      className={`btn shrink-0 ${small ? "btn-sm" : ""} ${done ? "bg-accent text-bg" : quiet ? "border border-line-2 bg-panel text-ink hover:bg-panel-2" : "bg-ink text-bg hover:bg-white"}`}>
       {done ? "Copied" : label}
     </button>
   );

@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
 import { getAmazonStatus, getLinks, getMe, getProduct } from "@/lib/data";
 import { amazonConfigured } from "@/lib/amazon";
-import { addPage, disconnectAmazon, pickAmazonAdvertiser, setPageArchived, setProductStatus, setTagTemplate, syncAmazon, updatePage, updateProduct } from "@/lib/actions";
+import { linktwinConfigured } from "@/lib/linktwin";
+import { addPage, disconnectAmazon, makeDeepLinks, pickAmazonAdvertiser, setDeepLinks, setPageArchived, setProductStatus, setTagTemplate, syncAmazon, updatePage, updateProduct } from "@/lib/actions";
 import { Flash } from "@/components/app/Flash";
-import { isTeamRole } from "@/lib/util";
+import { copyUrl, isTeamRole } from "@/lib/util";
 
 export default async function Settings({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ok?: string; error?: string }> }) {
   const { id } = await params;
@@ -15,6 +16,10 @@ export default async function Settings({ params, searchParams }: { params: Promi
   const apiReady = amazonConfigured();
   const back = `/app/products/${id}/settings`;
   const used = (pageId: string) => links.filter((l) => l.page_id === pageId).length;
+  const deepReady = linktwinConfigured();
+  const pageUrl = new Map(pages.map((p) => [p.id, p.url]));
+  const tracked = links.filter((l) => !l.archived_at && l.amazon_tag);
+  const deepMissing = tracked.filter((l) => !l.deep_url || l.deep_dest !== copyUrl(false, l, pageUrl.get(l.page_id) ?? "").plain).length;
 
   return (
     <div className="max-w-3xl space-y-4">
@@ -128,6 +133,39 @@ export default async function Settings({ params, searchParams }: { params: Promi
             <p className="font-mono text-xs leading-relaxed text-ink-3">Connecting to Amazon fills this in for you. With a template saved, the tracker puts the product and the link&apos;s own ID into every new link, and Amazon reports sales per link.</p>
           </form>
         </details>
+      </div>
+
+      <div className="card space-y-3 p-5">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="label">Deep links</div>
+          {product.deep_links ? <span className="pill-live">on</span> : <span className="pill-muted">off</span>}
+        </div>
+        <p className="text-sm leading-relaxed text-ink-2">
+          A deep link opens the Amazon app on a phone, where the shopper is already signed in, instead of the browser inside Instagram or TikTok.
+          With this on, every tracked link of {product.name} gets one through LinkTwin and creators copy that. The plain Amazon link stays available as a fallback.
+        </p>
+        {!deepReady ? (
+          <p className="font-mono text-xs leading-relaxed text-amber">LinkTwin is not set up on this site yet. Add LINKTWIN_API_KEY in Vercel, redeploy, then switch this on.</p>
+        ) : (
+          <div className="flex flex-wrap items-center gap-2">
+            <form action={setDeepLinks}>
+              <input type="hidden" name="id" value={id} /><input type="hidden" name="back" value={back} />
+              <input type="hidden" name="on" value={product.deep_links ? "0" : "1"} />
+              <button className={product.deep_links ? "btn-ghost" : "btn-primary"}>{product.deep_links ? "Switch deep links off" : "Switch deep links on"}</button>
+            </form>
+            {product.deep_links && deepMissing > 0 && (
+              <form action={makeDeepLinks}>
+                <input type="hidden" name="id" value={id} /><input type="hidden" name="back" value={back} />
+                <button className="btn-primary">Make {deepMissing} missing deep {deepMissing === 1 ? "link" : "links"}</button>
+              </form>
+            )}
+          </div>
+        )}
+        <p className="font-mono text-xs leading-relaxed text-ink-3">
+          {product.deep_links
+            ? `${tracked.length - deepMissing} of ${tracked.length} tracked links have a deep link. Links with no Amazon tag yet get theirs when the tag is attached.`
+            : "Switching this off later does not break deep links creators have already posted."}
+        </p>
       </div>
 
       <form action={setProductStatus} className="card flex flex-wrap items-center gap-3 p-5">
