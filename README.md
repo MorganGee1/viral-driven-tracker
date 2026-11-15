@@ -40,16 +40,16 @@ Links are never deleted, only archived, so an old link in a bio keeps counting a
 3. Supabase > Authentication > Providers > Discord > enable, paste both. Copy the **Callback URL** it shows.
 4. Discord > OAuth2 > Redirects > add that callback > Save.
 5. Supabase > Authentication > URL Configuration:
-   - Site URL: `https://tracker.viraldrivenmedia.com`
-   - Redirect URLs: `https://tracker.viraldrivenmedia.com/**`, `https://*.vercel.app/**`, `http://localhost:3000/**`
+   - Site URL: `https://app.viraldrivenmedia.com`
+   - Redirect URLs: `https://app.viraldrivenmedia.com/**`, `https://*.vercel.app/**`, `http://localhost:3000/**`
 
 ### 3. Vercel
 1. vercel.com/new > import `MorganGee1/viral-driven-tracker`.
 2. Environment variables (see `.env.example`):
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY` (the publishable key)
-   - `NEXT_PUBLIC_SITE_URL` = `https://tracker.viraldrivenmedia.com`
-3. Deploy, then Settings > Domains > add `tracker.viraldrivenmedia.com`.
+   - `NEXT_PUBLIC_SITE_URL` = `https://app.viraldrivenmedia.com`
+3. Deploy, then Settings > Domains > add `app.viraldrivenmedia.com`.
 
 The public site loads with no environment variables at all, so the Amazon submission never depends on Supabase being up.
 
@@ -94,7 +94,7 @@ What it does once switched on:
 It calls only these: `GET /v2/profiles`, `GET /attribution/advertisers`, `GET /attribution/publishers`, `GET /attribution/tags/nonMacroTemplateTag`, `POST /attribution/report`.
 
 To switch it on:
-1. In the Login with Amazon security profile, add the allowed return URL `https://tracker.viraldrivenmedia.com/api/amazon/callback`.
+1. In the Login with Amazon security profile, add the allowed return URL `https://app.viraldrivenmedia.com/api/amazon/callback`.
 2. Add these in Vercel > Environment variables, then redeploy:
    - `AMAZON_CLIENT_ID`, `AMAZON_CLIENT_SECRET` (from the Login with Amazon security profile)
    - `AMAZON_TOKEN_KEY` (any long random string; it encrypts the stored Amazon token, so never change it once brands are connected)

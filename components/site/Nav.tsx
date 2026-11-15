@@ -60,7 +60,6 @@ export function SiteFooter() {
             <li><Link href="/about" className="hover:text-ink">About us</Link></li>
             <li><Link href="/services" className="hover:text-ink">Services</Link></li>
             <li><Link href="/contact" className="hover:text-ink">Contact</Link></li>
-            <li><a href={SITE.parentSite} className="hover:text-ink" target="_blank" rel="noreferrer">viraldrivenmedia.com</a></li>
           </ul>
         </div>
         <div>

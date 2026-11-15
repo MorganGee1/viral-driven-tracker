@@ -41,7 +41,7 @@ export default function About() {
           <div className="card p-5">
             <div className="label">Trading as</div>
             <div className="mt-2 text-sm font-medium">{SITE.tradeName}</div>
-            <a href={SITE.parentSite} target="_blank" rel="noreferrer" className="mt-1 block font-mono text-xs text-accent">viraldrivenmedia.com</a>
+            <div className="mt-1 font-mono text-xs text-ink-3">viraldrivenmedia.com</div>
           </div>
           <div className="card p-5">
             <div className="label">Registered office</div>
@@ -61,7 +61,7 @@ export default function About() {
       <div className="mt-16 border-t border-line pt-10">
         <h2 className="text-2xl font-bold">How the platform relates to the agency</h2>
         <p className="mt-3 max-w-3xl text-ink-2 leading-relaxed">
-          {SITE.company} is the operating entity for both {SITE.tradeName}, the content agency at viraldrivenmedia.com, and {SITE.name}, the Amazon measurement platform at this site. The same company, team and contact details stand behind both. Clients of the agency use the platform as part of their service; brands can also engage us for measurement only.
+          {SITE.company} is the operating entity for both {SITE.tradeName}, the content agency, and {SITE.name}, the Amazon measurement platform on this site. The same company, team and contact details stand behind both. Clients of the agency use the platform as part of their service; brands can also engage us for measurement only.
         </p>
         <div className="mt-6 flex gap-3">
           <Link href="/services" className="btn-ghost">Services</Link>
