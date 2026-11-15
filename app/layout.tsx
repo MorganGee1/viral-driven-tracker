@@ -14,7 +14,6 @@ export const metadata: Metadata = {
     siteName: SITE.name,
     type: "website",
   },
-  icons: { icon: "/icon.svg" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
