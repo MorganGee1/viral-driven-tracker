@@ -617,6 +617,31 @@ begin
 end $$;
 
 -- =====================================================================
+-- 9c. Client connect links (how a client connects their brand without a tracker account)
+-- =====================================================================
+-- The team makes a link for a brand and sends it to whoever holds that brand's Amazon Ads login.
+-- That person opens it, signs in with Amazon and approves. They never sign in here.
+-- A link works once (used_at), runs out (expires_at) and can be switched off (revoked_at).
+-- Team only. The public connect page never reads this table from the browser: the server looks
+-- the link up by its code with its own key, so a signed-out visitor cannot list or guess links.
+create table if not exists public.amazon_connect_links (
+  id uuid primary key default gen_random_uuid(),
+  brand_id uuid not null references public.brands(id) on delete cascade,
+  code text not null unique check (code ~ '^[a-f0-9]{40}$'),
+  created_by uuid references public.profiles(id) on delete set null,
+  created_at timestamptz not null default now(),
+  expires_at timestamptz not null,
+  used_at timestamptz,
+  revoked_at timestamptz,
+  last_error text
+);
+create index if not exists amazon_connect_links_brand_idx on public.amazon_connect_links(brand_id, created_at desc);
+alter table public.amazon_connect_links enable row level security;
+drop policy if exists "connect links team" on public.amazon_connect_links;
+create policy "connect links team" on public.amazon_connect_links for all to authenticated
+  using ((select public.is_team())) with check ((select public.is_team()));
+
+-- =====================================================================
 -- 10. Access for the app's database roles
 -- =====================================================================
 -- Signed-out visitors get nothing except the invite preview. Signed-in people get the
@@ -637,6 +662,10 @@ grant execute on function
   to authenticated, service_role;
 grant execute on function public.invite_preview(text) to anon, authenticated, service_role;
 grant select, insert, update, delete on public.amazon_connections to service_role;
+-- Connect links: the team makes them and switches them off (never deletes), the server spends them.
+revoke all on public.amazon_connect_links from public, anon, authenticated;
+grant select, insert, update on public.amazon_connect_links to authenticated;
+grant select, insert, update, delete on public.amazon_connect_links to service_role;
 
 -- Supabase lets signed-out visitors call every function in public by default. Take that away:
 -- the only thing a signed-out visitor may call is the invite preview on the join page.

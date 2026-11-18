@@ -1,9 +1,11 @@
 import { redirect } from "next/navigation";
-import { getAmazonStatus, getLinks, getMe, getProduct } from "@/lib/data";
+import { getAmazonStatus, getConnectLink, getLinks, getMe, getProduct } from "@/lib/data";
 import { amazonConfigured } from "@/lib/amazon";
 import { linktwinConfigured } from "@/lib/linktwin";
 import { addPage, disconnectAmazon, makeDeepLinks, pickAmazonAdvertiser, setDeepLinks, setPageArchived, setProductStatus, setTagTemplate, syncAmazon, updatePage, updateProduct } from "@/lib/actions";
 import { Flash } from "@/components/app/Flash";
+import { ConnectLinkPanel } from "@/components/app/ConnectLinkPanel";
+import { getOrigin } from "@/lib/origin";
 import { copyUrl, isTeamRole } from "@/lib/util";
 
 export default async function Settings({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ok?: string; error?: string }> }) {
@@ -12,9 +14,12 @@ export default async function Settings({ params, searchParams }: { params: Promi
   const me = (await getMe())!;
   if (!isTeamRole(me.role)) redirect(`/app/products/${id}`);
   const { product, brand, pages } = (await getProduct(id))!;
-  const [links, amazon] = await Promise.all([getLinks({ product: id }), getAmazonStatus(brand.id)]);
   const apiReady = amazonConfigured();
+  const [links, amazon, connectLink, origin] = await Promise.all([
+    getLinks({ product: id }), getAmazonStatus(brand.id), apiReady ? getConnectLink(brand.id) : null, getOrigin(),
+  ]);
   const back = `/app/products/${id}/settings`;
+  const clientLink = <ConnectLinkPanel link={connectLink} brandId={brand.id} brandName={brand.name} origin={origin} back={back} connected={amazon.connected} />;
   const used = (pageId: string) => links.filter((l) => l.page_id === pageId).length;
   const deepReady = linktwinConfigured();
   const pageUrl = new Map(pages.map((p) => [p.id, p.url]));
@@ -108,13 +113,18 @@ export default async function Settings({ params, searchParams }: { params: Promi
                 <button className="btn-danger">Disconnect</button>
               </form>
             </div>
+            {apiReady && clientLink}
           </div>
         ) : apiReady ? (
           <div className="space-y-3">
             <p className="text-sm leading-relaxed text-ink-2">
               Connect {brand.name}&apos;s Amazon Ads account. Whoever owns it signs in with Amazon and approves access to Amazon Attribution. After that, links are tagged automatically and sales sync every night.
             </p>
+            <p className="text-sm leading-relaxed text-ink-2">
+              Hold the Amazon login yourself? Press the button. Does a client hold it? Send them the link underneath.
+            </p>
             <a href={`/api/amazon/connect?brand=${brand.id}&back=${encodeURIComponent(back)}`} className="btn-primary">Connect Amazon Ads</a>
+            {clientLink}
           </div>
         ) : (
           <p className="text-sm leading-relaxed text-ink-2">

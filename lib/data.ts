@@ -199,3 +199,18 @@ export async function getAmazonStatus(brandId: string): Promise<AmazonStatus> {
   if (error) throw new Error(error.message);
   return (data as AmazonStatus | null) ?? { connected: false };
 }
+
+export type ConnectLinkRow = {
+  id: string; code: string; created_at: string; expires_at: string;
+  used_at: string | null; revoked_at: string | null; last_error: string | null;
+};
+/** The newest client connect link for a brand, or null. The database only answers this for the team. */
+export async function getConnectLink(brandId: string): Promise<ConnectLinkRow | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("amazon_connect_links")
+    .select("id, code, created_at, expires_at, used_at, revoked_at, last_error")
+    .eq("brand_id", brandId).order("created_at", { ascending: false }).limit(1).maybeSingle();
+  // A database that has not had schema.sql run since this was added simply shows no link.
+  if (error) return null;
+  return (data as ConnectLinkRow | null) ?? null;
+}

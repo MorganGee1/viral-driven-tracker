@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getMe } from "@/lib/data";
 import { type Candidate, type Region, amazonConfigured, decrypt, finishConnection, refreshAccess, syncBrand } from "@/lib/amazon";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { CONNECT_LINK_DAYS, newConnectCode } from "@/lib/connectlinks";
 import { deepSummary, deepWriter, syncDeepLinks } from "@/lib/deeplinks";
 import { linktwinConfigured } from "@/lib/linktwin";
 import {
@@ -512,4 +513,40 @@ export async function disconnectAmazon(fd: FormData) {
   if (error) fail(back, "Could not disconnect.");
   revalidatePath("/app", "layout");
   redirect(withParam(back, "ok", "Disconnected from Amazon. Nothing is pulled any more. Existing links and numbers are untouched."));
+}
+
+// ---------- client connect links ----------
+
+/**
+ * Makes the link a client opens to connect their brand's Amazon Ads, with no tracker sign-in.
+ * One live link per brand: making a new one switches the old one off.
+ */
+export async function createConnectLink(fd: FormData) {
+  const me = await requireTeam();
+  const brandId = str(fd, "brand_id");
+  const back = backTo(fd, `/app/brands/${brandId}`);
+  if (!amazonConfigured()) fail(back, "The Amazon Ads API is not set up on this site yet.");
+  const supabase = await createClient();
+  const { error: e1 } = await supabase.from("amazon_connect_links").update({ revoked_at: new Date().toISOString() })
+    .eq("brand_id", brandId).is("used_at", null).is("revoked_at", null);
+  if (e1) fail(back, "Could not make the connect link. If this keeps happening, run supabase/schema.sql again.");
+  const { error } = await supabase.from("amazon_connect_links").insert({
+    brand_id: brandId, code: newConnectCode(), created_by: me.id,
+    expires_at: new Date(Date.now() + CONNECT_LINK_DAYS * 86400000).toISOString(),
+  });
+  if (error) fail(back, "Could not make the connect link.");
+  revalidatePath(back.split("?")[0]);
+  redirect(withParam(back, "ok", "Connect link made. Copy it from the Amazon connection box and send it to whoever holds the brand's Amazon login."));
+}
+
+export async function revokeConnectLink(fd: FormData) {
+  await requireTeam();
+  const id = str(fd, "id");
+  const back = backTo(fd, "/app");
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("amazon_connect_links").update({ revoked_at: new Date().toISOString() })
+    .eq("id", id).is("used_at", null).is("revoked_at", null).select("id");
+  if (error || !data?.length) fail(back, "Could not switch that connect link off.");
+  revalidatePath(back.split("?")[0]);
+  redirect(withParam(back, "ok", "Connect link switched off. It will not connect anything now."));
 }

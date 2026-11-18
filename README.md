@@ -76,6 +76,7 @@ Numbers are Amazon Attribution numbers: clicks, detail page views, add to carts,
 - A creator can rename, annotate or archive their own link. They cannot change its account, placement, Amazon page or tag.
 - Team: everything, except team invite links and role changes, which are owner only.
 - Nobody can delete a link.
+- Signed-out visitors see nothing, with two exceptions: the invite page (what the invite is for) and the client connect page (the brand's name and country).
 
 `supabase/schema.sql` section 6 holds these rules.
 
@@ -103,6 +104,26 @@ To switch it on:
 3. Run `supabase/schema.sql` again if you have not since this was added.
 
 Until those keys exist, the Connect button does not show and everything works on report uploads.
+
+### Client connect link (the client holds the Amazon login)
+
+When someone outside the team holds a brand's Amazon Ads login, send them a link instead of adding them to the tracker.
+
+1. Product > Settings > Amazon connection > **Make a connect link** > Copy.
+2. Send it to whoever holds that brand's Amazon login. They open it, press **Continue with Amazon**, sign in and approve.
+3. The brand is now connected. If their login sees more than one Amazon Attribution advertiser, Settings asks you to pick.
+
+What the client sees: one page with the brand's name and country and what the tracker does with the access. No Discord, no tracker account, nothing of the app.
+
+Rules:
+
+- A link works once, lasts 14 days, and can be switched off. Making a new link switches the old one off.
+- Only the team can make, see or switch off links (enforced in the database). Creators cannot.
+- The public page and the Amazon routes look the link up on the server by its code. The link is the only permission, and the brand always comes from the link, never from the browser.
+- If a try through the link fails, the client gets a plain message and the real reason shows in Settings under the link.
+- Needs `supabase/schema.sql` run again (it adds the `amazon_connect_links` table).
+
+One thing to know before sending it to a client: Amazon's approval screen shows the name of the Login with Amazon app whose keys are in Vercel. Use an app that Amazon has approved for connecting other companies' accounts, not one approved for your own brand only.
 
 ## Deep links (LinkTwin)
 
