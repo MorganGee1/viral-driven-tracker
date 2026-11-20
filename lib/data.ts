@@ -6,7 +6,8 @@ export type Profile = {
   id: string; username: string; discord_username: string | null; discord_id: string | null;
   avatar_url: string | null; role: Role; created_at: string;
 };
-export type Brand = { id: string; name: string; marketplace: string; tag_template: string | null };
+/** amazon_app: which Login with Amazon app this brand connects through. See lib/amazon.ts. */
+export type Brand = { id: string; name: string; marketplace: string; tag_template: string | null; amazon_app: "direct" | "partner" };
 export type Product = { id: string; brand_id: string; name: string; status: "active" | "archived"; deep_links: boolean; created_at: string };
 export type AmazonPage = { id: string; product_id: string; name: string; url: string; archived_at: string | null };
 export type Link = {
@@ -50,7 +51,7 @@ export const getMe = cache(async (): Promise<Profile | null> => {
 export const getNav = cache(async () => {
   const supabase = await createClient();
   const [brands, products] = await Promise.all([
-    fetchAll<Brand>((a, b) => supabase.from("brands").select("id, name, marketplace, tag_template").order("name").order("id").range(a, b)),
+    fetchAll<Brand>((a, b) => supabase.from("brands").select("id, name, marketplace, tag_template, amazon_app").order("name").order("id").range(a, b)),
     fetchAll<Product>((a, b) => supabase.from("products").select("id, brand_id, name, status, deep_links, created_at").order("name").order("id").range(a, b)),
   ]);
   return { brands, products };
@@ -62,7 +63,7 @@ export const getProduct = cache(async (id: string) => {
   const { data: product } = await supabase.from("products").select("id, brand_id, name, status, deep_links, created_at").eq("id", id).maybeSingle();
   if (!product) return null;
   const [{ data: brand }, { data: pages, error }] = await Promise.all([
-    supabase.from("brands").select("id, name, marketplace, tag_template").eq("id", product.brand_id).maybeSingle(),
+    supabase.from("brands").select("id, name, marketplace, tag_template, amazon_app").eq("id", product.brand_id).maybeSingle(),
     supabase.from("amazon_pages").select("id, product_id, name, url, archived_at").eq("product_id", id).order("created_at"),
   ]);
   if (error) throw new Error(error.message);
@@ -73,7 +74,7 @@ export const getProduct = cache(async (id: string) => {
 export async function getBrand(id: string) {
   if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
   const supabase = await createClient();
-  const { data } = await supabase.from("brands").select("id, name, marketplace, tag_template").eq("id", id).maybeSingle();
+  const { data } = await supabase.from("brands").select("id, name, marketplace, tag_template, amazon_app").eq("id", id).maybeSingle();
   return (data as Brand | null) ?? null;
 }
 
@@ -188,7 +189,7 @@ export async function getDataThrough(scope: { product?: string; brand?: string }
 export const totalsFor = (map: Map<string, Totals>, linkId: string) => map.get(linkId) ?? ZERO;
 
 export type AmazonStatus = {
-  connected: boolean; region?: string; advertiser_id?: string | null; advertiser_name?: string | null;
+  connected: boolean; app?: "direct" | "partner"; region?: string; advertiser_id?: string | null; advertiser_name?: string | null;
   candidates?: { profileId: string; advertiserId: string; advertiserName: string; countryCode: string }[];
   connected_at?: string; last_sync_at?: string | null; last_sync_status?: string | null; last_sync_rows?: number | null;
 };

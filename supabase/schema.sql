@@ -587,11 +587,28 @@ create table if not exists public.amazon_connections (
 );
 alter table public.amazon_connections enable row level security;
 
+-- Two Login with Amazon apps can be in use at once (see lib/amazon.ts):
+--   'direct'  the app Amazon approved for the company's own brand       (AMAZON_CLIENT_ID)
+--   'partner' the app Amazon approved for connecting clients' accounts  (AMAZON_PARTNER_CLIENT_ID)
+-- amazon_connections.app: which app a stored token came from. Amazon only takes a token back from that app.
+-- Everything connected before there were two apps came through the direct one.
+alter table public.amazon_connections add column if not exists app text not null default 'direct';
+alter table public.amazon_connections drop constraint if exists amazon_connections_app_check;
+alter table public.amazon_connections add constraint amazon_connections_app_check check (app in ('direct', 'partner'));
+-- brands.amazon_app: which app a brand connects through from now on. New brands use the partner app.
+-- The first time this runs, brands that are already connected stay on the app that connected them.
+alter table public.brands add column if not exists amazon_app text;
+update public.brands b set amazon_app = coalesce((select c.app from public.amazon_connections c where c.brand_id = b.id), 'partner') where b.amazon_app is null;
+alter table public.brands alter column amazon_app set default 'partner';
+alter table public.brands alter column amazon_app set not null;
+alter table public.brands drop constraint if exists brands_amazon_app_check;
+alter table public.brands add constraint brands_amazon_app_check check (amazon_app in ('direct', 'partner'));
+
 create or replace function public.amazon_status(p_brand uuid)
 returns jsonb language sql stable security definer set search_path = public as $$
   select case when not public.is_team() then null else coalesce((
     select jsonb_build_object(
-      'connected', true, 'region', c.region, 'advertiser_id', c.advertiser_id, 'advertiser_name', c.advertiser_name,
+      'connected', true, 'app', c.app, 'region', c.region, 'advertiser_id', c.advertiser_id, 'advertiser_name', c.advertiser_name,
       'candidates', c.candidates, 'connected_at', c.connected_at,
       'last_sync_at', c.last_sync_at, 'last_sync_status', c.last_sync_status, 'last_sync_rows', c.last_sync_rows)
     from public.amazon_connections c where c.brand_id = p_brand

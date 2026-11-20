@@ -25,7 +25,7 @@ export function connectLinkState(l: Times, now = Date.now()): Exclude<ConnectLin
   return Date.parse(l.expires_at) <= now ? "expired" : "ok";
 }
 
-export type ConnectBrand = { id: string; name: string; marketplace: string };
+export type ConnectBrand = { id: string; name: string; marketplace: string; amazon_app: "direct" | "partner" };
 export type ConnectLookup =
   | { state: "not_found"; link?: undefined; brand?: undefined }
   | { state: Exclude<ConnectLinkState, "not_found">; link: Times & { id: string; brand_id: string }; brand: ConnectBrand };
@@ -37,7 +37,7 @@ export async function lookupConnectLink(code: string): Promise<ConnectLookup> {
   const { data: link, error } = await db.from("amazon_connect_links").select("id, brand_id, expires_at, used_at, revoked_at").eq("code", code).maybeSingle();
   if (error) throw new Error(error.message);
   if (!link) return { state: "not_found" };
-  const { data: brand, error: e2 } = await db.from("brands").select("id, name, marketplace").eq("id", link.brand_id).maybeSingle();
+  const { data: brand, error: e2 } = await db.from("brands").select("id, name, marketplace, amazon_app").eq("id", link.brand_id).maybeSingle();
   if (e2) throw new Error(e2.message);
   if (!brand) return { state: "not_found" };
   return { state: connectLinkState(link), link, brand: brand as ConnectBrand };

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getMe } from "@/lib/data";
-import { type Candidate, type Region, amazonConfigured, decrypt, finishConnection, refreshAccess, syncBrand } from "@/lib/amazon";
+import { type Candidate, type Region, APP_KEYS, APP_LABEL, amazonConfigured, appConfigured, asApp, decrypt, finishConnection, refreshAccess, syncBrand } from "@/lib/amazon";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CONNECT_LINK_DAYS, newConnectCode } from "@/lib/connectlinks";
 import { deepSummary, deepWriter, syncDeepLinks } from "@/lib/deeplinks";
@@ -478,12 +478,13 @@ export async function pickAmazonAdvertiser(fd: FormData) {
   const back = backTo(fd, `/app/brands/${brandId}`);
   if (!amazonConfigured()) fail(back, "The Amazon Ads API is not set up on this site yet.");
   const db = createAdminClient();
-  const { data: conn } = await db.from("amazon_connections").select("region, refresh_token_enc, candidates").eq("brand_id", brandId).maybeSingle();
+  const { data: conn } = await db.from("amazon_connections").select("app, region, refresh_token_enc, candidates").eq("brand_id", brandId).maybeSingle();
   const pick = ((conn?.candidates ?? []) as Candidate[]).find((c) => c.advertiserId === str(fd, "advertiser_id"));
   if (!conn || !pick) fail(back, "Connect the brand to Amazon first, then pick the advertiser.");
   let message = "";
   try {
-    await finishConnection(brandId, pick, conn.region as Region, await refreshAccess(conn.region as Region, decrypt(conn.refresh_token_enc)));
+    const app = asApp(conn.app); // the app this brand's stored token came from
+    await finishConnection(app, brandId, pick, conn.region as Region, await refreshAccess(app, conn.region as Region, decrypt(conn.refresh_token_enc)));
   } catch (e) {
     message = e instanceof Error ? e.message : "Amazon refused.";
   }
@@ -527,6 +528,11 @@ export async function createConnectLink(fd: FormData) {
   const back = backTo(fd, `/app/brands/${brandId}`);
   if (!amazonConfigured()) fail(back, "The Amazon Ads API is not set up on this site yet.");
   const supabase = await createClient();
+  // A link is only worth sending if the app this brand connects through can be used.
+  const { data: brand } = await supabase.from("brands").select("name, amazon_app").eq("id", brandId).maybeSingle();
+  if (!brand) fail(back, "Brand not found.");
+  const app = asApp(brand.amazon_app);
+  if (!appConfigured(app)) fail(back, `${brand.name} connects through the Amazon ${APP_LABEL[app]}, and its keys are not on this site yet. Add ${APP_KEYS[app]} in Vercel, then redeploy.`);
   const { error: e1 } = await supabase.from("amazon_connect_links").update({ revoked_at: new Date().toISOString() })
     .eq("brand_id", brandId).is("used_at", null).is("revoked_at", null);
   if (e1) fail(back, "Could not make the connect link. If this keeps happening, run supabase/schema.sql again.");

@@ -123,7 +123,22 @@ Rules:
 - If a try through the link fails, the client gets a plain message and the real reason shows in Settings under the link.
 - Needs `supabase/schema.sql` run again (it adds the `amazon_connect_links` table).
 
-One thing to know before sending it to a client: Amazon's approval screen shows the name of the Login with Amazon app whose keys are in Vercel. Use an app that Amazon has approved for connecting other companies' accounts, not one approved for your own brand only.
+One thing to know before sending it to a client: Amazon's approval screen shows the name of the Login with Amazon app the brand connects through. Client brands go through the partner app (next section), which is the one Amazon approved for connecting other companies' accounts.
+
+### Two Amazon apps: own brand and clients
+
+The site can hold the keys of two Login with Amazon apps at once. Every brand connects through exactly one of them.
+
+| App | Keys in Vercel | Who connects through it |
+| --- | --- | --- |
+| Own-brand app (`direct`) | `AMAZON_CLIENT_ID`, `AMAZON_CLIENT_SECRET` | MyCompanion. The app Amazon approved for the company's own brand. |
+| Partner app (`partner`) | `AMAZON_PARTNER_CLIENT_ID`, `AMAZON_PARTNER_CLIENT_SECRET` | Every other brand, and every brand added from now on. The app Amazon approved for client accounts. |
+
+- `brands.amazon_app` says which app a brand connects through. New brands get `partner`. The product's Settings page shows which one it is.
+- `amazon_connections.app` records which app a stored connection came from. Syncs always use that app's keys, because Amazon only takes a token back from the app it was given to.
+- There is no fallback between the two. If a brand's app has no keys on the site, its Connect button and connect link do not show, and Settings names the keys that are missing.
+- Both apps need the allowed return URL `https://app.viraldrivenmedia.com/api/amazon/callback` in their Login with Amazon security profile.
+- To move a brand to the other app: `update public.brands set amazon_app = 'direct' where name = '...';` (or `'partner'`), then press Reconnect in Settings. The old connection keeps syncing until then.
 
 ## Deep links (LinkTwin)
 

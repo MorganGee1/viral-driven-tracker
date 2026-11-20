@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getAmazonStatus, getConnectLink, getLinks, getMe, getProduct } from "@/lib/data";
-import { amazonConfigured } from "@/lib/amazon";
+import { APP_KEYS, APP_LABEL, amazonConfigured, appConfigured, asApp } from "@/lib/amazon";
 import { linktwinConfigured } from "@/lib/linktwin";
 import { addPage, disconnectAmazon, makeDeepLinks, pickAmazonAdvertiser, setDeepLinks, setPageArchived, setProductStatus, setTagTemplate, syncAmazon, updatePage, updateProduct } from "@/lib/actions";
 import { Flash } from "@/components/app/Flash";
@@ -15,9 +15,14 @@ export default async function Settings({ params, searchParams }: { params: Promi
   if (!isTeamRole(me.role)) redirect(`/app/products/${id}`);
   const { product, brand, pages } = (await getProduct(id))!;
   const apiReady = amazonConfigured();
+  // Each brand connects through one of two Login with Amazon apps. This is the one a new connection would use.
+  const app = asApp(brand.amazon_app);
+  const appReady = appConfigured(app);
   const [links, amazon, connectLink, origin] = await Promise.all([
-    getLinks({ product: id }), getAmazonStatus(brand.id), apiReady ? getConnectLink(brand.id) : null, getOrigin(),
+    getLinks({ product: id }), getAmazonStatus(brand.id), appReady ? getConnectLink(brand.id) : null, getOrigin(),
   ]);
+  const liveApp = amazon.connected ? asApp(amazon.app) : app; // the app the stored connection came from
+  const appWhat = { direct: "the one Amazon approved for your own brand", partner: "the one Amazon approved for client accounts" };
   const back = `/app/products/${id}/settings`;
   const clientLink = <ConnectLinkPanel link={connectLink} brandId={brand.id} brandName={brand.name} origin={origin} back={back} connected={amazon.connected} />;
   const used = (pageId: string) => links.filter((l) => l.page_id === pageId).length;
@@ -96,6 +101,9 @@ export default async function Settings({ params, searchParams }: { params: Promi
               </form>
             )}
             <div className="font-mono text-xs leading-relaxed text-ink-3">
+              Connected through the {APP_LABEL[liveApp]}, {appWhat[liveApp]}.{liveApp !== app ? ` Reconnecting moves ${brand.name} to the ${APP_LABEL[app]}.` : ""}
+            </div>
+            <div className="font-mono text-xs leading-relaxed text-ink-3">
               {amazon.last_sync_at
                 ? <>Last sync {new Date(amazon.last_sync_at).toLocaleString("en-GB", { timeZone: "America/Los_Angeles", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })} Los Angeles time · {amazon.last_sync_status === "ok" ? `${amazon.last_sync_rows ?? 0} rows` : <span className="text-rose">failed: {amazon.last_sync_status}</span>}</>
                 : "Not synced yet."}
@@ -107,15 +115,15 @@ export default async function Settings({ params, searchParams }: { params: Promi
                   <button className="btn-primary">Sync now</button>
                 </form>
               )}
-              <a href={`/api/amazon/connect?brand=${brand.id}&back=${encodeURIComponent(back)}`} className="btn-ghost">Reconnect</a>
+              {appReady && <a href={`/api/amazon/connect?brand=${brand.id}&back=${encodeURIComponent(back)}`} className="btn-ghost">Reconnect</a>}
               <form action={disconnectAmazon}>
                 <input type="hidden" name="brand_id" value={brand.id} /><input type="hidden" name="back" value={back} />
                 <button className="btn-danger">Disconnect</button>
               </form>
             </div>
-            {apiReady && clientLink}
+            {appReady && clientLink}
           </div>
-        ) : apiReady ? (
+        ) : appReady ? (
           <div className="space-y-3">
             <p className="text-sm leading-relaxed text-ink-2">
               Connect {brand.name}&apos;s Amazon Ads account. Whoever owns it signs in with Amazon and approves access to Amazon Attribution. After that, links are tagged automatically and sales sync every night.
@@ -124,8 +132,13 @@ export default async function Settings({ params, searchParams }: { params: Promi
               Hold the Amazon login yourself? Press the button. Does a client hold it? Send them the link underneath.
             </p>
             <a href={`/api/amazon/connect?brand=${brand.id}&back=${encodeURIComponent(back)}`} className="btn-primary">Connect Amazon Ads</a>
+            <p className="font-mono text-xs leading-relaxed text-ink-3">{brand.name} connects through the {APP_LABEL[app]}, {appWhat[app]}.</p>
             {clientLink}
           </div>
+        ) : apiReady ? (
+          <p className="text-sm leading-relaxed text-ink-2">
+            {brand.name} connects through the Amazon {APP_LABEL[app]}, {appWhat[app]}. Its keys are not on this site yet. Add <span className="font-mono text-xs text-ink">{APP_KEYS[app]}</span> in Vercel, redeploy, and the Connect button shows up here. Until then links are tagged by hand in Tracking links and numbers come in through Import report.
+          </p>
         ) : (
           <p className="text-sm leading-relaxed text-ink-2">
             Sales numbers come from Amazon Attribution. The Amazon Ads API is not switched on for this site yet (it needs Amazon&apos;s approval, then the keys in the README), so for now links are tagged by hand in Tracking links and numbers come in through Import report.

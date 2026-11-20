@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/site/Nav";
-import { amazonConfigured } from "@/lib/amazon";
+import { amazonConfigured, appConfigured, asApp } from "@/lib/amazon";
 import { lookupConnectLink, type ConnectLookup } from "@/lib/connectlinks";
 import { SITE } from "@/lib/site";
 import { fmtDay } from "@/lib/util";
@@ -30,7 +30,9 @@ export default async function ConnectPage({ params, searchParams }: { params: Pr
   let found: ConnectLookup | null = null;
   if (ready) { try { found = await lookupConnectLink(code); } catch { found = null; } }
 
-  const state = !ready ? "unavailable" : !found ? "unavailable" : found.state;
+  // The link is only usable if the app this brand connects through has its keys on the site.
+  const appReady = !!found?.brand && appConfigured(asApp(found.brand.amazon_app));
+  const state = !ready || !found ? "unavailable" : found.state === "ok" && !appReady ? "unavailable" : found.state;
   const brand = found?.brand;
   const tried: Record<string, string> = brand ? {
     denied: "Amazon access was not approved, so nothing was connected. You can try again below.",
