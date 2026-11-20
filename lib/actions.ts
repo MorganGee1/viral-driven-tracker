@@ -8,6 +8,7 @@ import { type Candidate, type Region, APP_KEYS, APP_LABEL, amazonConfigured, app
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CONNECT_LINK_DAYS, newConnectCode } from "@/lib/connectlinks";
 import { deepSummary, deepWriter, syncDeepLinks } from "@/lib/deeplinks";
+import { flashQuery } from "@/lib/flash";
 import { linktwinConfigured } from "@/lib/linktwin";
 import {
   PLACEMENTS, PLATFORMS, cleanAmazonUrl, defaultLinkName, isTeamRole, parseCsv, toIsoDate,
@@ -23,12 +24,14 @@ function backTo(fd: FormData, fallback: string) {
   if (!raw.startsWith("/app")) return fallback;
   const [path, query = ""] = raw.split("?");
   const sp = new URLSearchParams(query);
-  sp.delete("error"); sp.delete("ok"); sp.delete("new");
+  sp.delete("error"); sp.delete("ok"); sp.delete("new"); sp.delete("sig");
   const q = sp.toString();
   return q ? `${path}?${q}` : path;
 }
+/** Adds a query setting to a path. The green and red bar messages (ok, error) are signed: see lib/flash.ts. */
 function withParam(path: string, key: string, value: string) {
-  return `${path}${path.includes("?") ? "&" : "?"}${key}=${encodeURIComponent(value)}`;
+  const q = key === "ok" || key === "error" ? flashQuery(key, value) : `${key}=${encodeURIComponent(value)}`;
+  return `${path}${path.includes("?") ? "&" : "?"}${q}`;
 }
 function fail(path: string, message: string): never {
   redirect(withParam(path, "error", message));
@@ -112,7 +115,7 @@ export async function addProduct(fd: FormData) {
   const { error: e2 } = await supabase.from("amazon_pages").insert({ product_id: data.id, name: pageName, url });
   if (e2) fail(`/app/products/${data.id}/settings`, "Product added, but the Amazon page did not save. Add it here.");
   revalidatePath("/app", "layout");
-  redirect(`/app/products/${data.id}/creators?ok=${encodeURIComponent("Product added. Create an invite link to bring creators in.")}`);
+  redirect(withParam(`/app/products/${data.id}/creators`, "ok", "Product added. Create an invite link to bring creators in."));
 }
 
 export async function updateProduct(fd: FormData) {

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getBrand, getMe } from "@/lib/data";
 import { APP_KEYS, APP_LABEL, amazonConfigured, appConfigured, asApp, authorizeUrl, regionFor } from "@/lib/amazon";
 import { lookupConnectLink } from "@/lib/connectlinks";
+import { flashQuery } from "@/lib/flash";
 import { getOrigin } from "@/lib/origin";
 import { supabaseConfigured } from "@/lib/supabase/server";
 import { isTeamRole } from "@/lib/util";
@@ -27,7 +28,7 @@ export async function GET(request: Request) {
   const brandId = url.searchParams.get("brand") ?? "";
   const rawBack = url.searchParams.get("back") ?? "";
   const back = rawBack.startsWith("/app") ? rawBack : "/app";
-  const to = (key: "ok" | "error", msg: string) => NextResponse.redirect(`${origin}${back}${back.includes("?") ? "&" : "?"}${key}=${encodeURIComponent(msg)}`);
+  const to = (key: "ok" | "error", msg: string) => NextResponse.redirect(`${origin}${back}${back.includes("?") ? "&" : "?"}${flashQuery(key, msg)}`);
   const me = await getMe();
   if (!me || !isTeamRole(me.role)) return NextResponse.redirect(`${origin}/app`);
   if (!amazonConfigured()) return to("error", "The Amazon Ads API is not set up on this site yet. It needs Amazon's approval first, then the keys from the README.");

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { flashQuery } from "@/lib/flash";
 import { createClient, supabaseConfigured } from "@/lib/supabase/server";
 
 /** Signed-in person lands here from an invite link: join, then go to the right place. */
@@ -14,7 +15,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ code
   const res = data as { ok: boolean; reason?: string; role?: string; product_id?: string; already?: boolean } | null;
   if (error || !res?.ok) return NextResponse.redirect(`${origin}/join/${code}?error=${encodeURIComponent(res?.reason ?? "failed")}`);
   if (res.role === "team") {
-    return NextResponse.redirect(`${origin}/app?ok=${encodeURIComponent(res.already ? "You are already on the team." : "You are on the team. You can see every brand.")}`);
+    return NextResponse.redirect(`${origin}/app?${flashQuery("ok", res.already ? "You are already on the team." : "You are on the team. You can see every brand.")}`);
   }
-  return NextResponse.redirect(`${origin}/app/products/${res.product_id}${res.already ? "" : `?ok=${encodeURIComponent("You are in. Make your first link below.")}`}`);
+  return NextResponse.redirect(`${origin}/app/products/${res.product_id}${res.already ? "" : `?${flashQuery("ok", "You are in. Make your first link below.")}`}`);
 }

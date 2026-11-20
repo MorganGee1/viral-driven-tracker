@@ -156,6 +156,20 @@ What happens after that:
 - Links that come out tagged the moment a creator makes them (once a brand has a tag template) get their deep link instantly only if `SUPABASE_SERVICE_ROLE_KEY` is set. Without it they wait for the next team action or the nightly job.
 - Switching deep links off sends creators back to the plain Amazon link. Deep links already posted keep working.
 
+## Security
+
+Checked on 20 November 2026 against the live project. What holds it together:
+
+- **Who can read what is decided in the database**, not the screens (`supabase/schema.sql` section 6). A signed-out visitor has no permission on any table. A creator reads and edits only their own links and numbers. Only the owner changes roles.
+- **Amazon tokens** are stored encrypted (AES-256-GCM, key in `AMAZON_TOKEN_KEY`) in a table only the server can reach. A token is useless without that key and the Amazon app's secret, and both live only in Vercel.
+- **Secrets** are Vercel environment variables marked sensitive. None are in this repository or its history. Only the two `NEXT_PUBLIC_` values reach the browser, and they are meant to.
+- **Invite and connect links** are unguessable (64-bit and 160-bit codes). Connect links work once and expire.
+- **The Amazon sign-in** carries a random state in an httpOnly cookie, so nobody can finish a connection they did not start.
+- **Messages in the address** (`?ok=` / `?error=`) are signed (`lib/flash.ts`) and the middleware drops any the app did not write, so a hand-made link cannot put words in the app's mouth. `FLASH_SECRET` is optional: without it the signature uses `CRON_SECRET`.
+- **Headers** on every page (`next.config.ts`): no framing by other sites, no content-type guessing, forms post only to this site, a tight referrer, and no camera, microphone, location or payment prompts.
+
+Things only the owner can do, outside the code: keep two-step sign-in on for Vercel, Supabase, GitHub, Discord and Amazon; keep email sign-in switched off in Supabase (Discord only); switch creator invite links off when onboarding is done.
+
 ## Design
 
 Dark, with one purple accent, used sparingly. The signed-in app is graphite and off-white. The accent is kept for one thing per page (the sales line on a product's Overview) and the logo. Bars, shares and the active tab are white and grey. Teal means good (connected, saved, up), amber needs a look, rose is wrong or down. No gradients or glows. Type is IBM Plex Sans with Plex Mono for figures, and names are joined to their numbers by dotted receipt lines. The one bright object is the paper receipt in the public hero. The design pass used the unslop skill by Damir Sokolovsky ([@heydamir](https://x.com/heydamir), https://github.com/heydamir/unslop, CC BY 4.0).

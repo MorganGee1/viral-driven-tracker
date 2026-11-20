@@ -684,6 +684,18 @@ revoke all on public.amazon_connect_links from public, anon, authenticated;
 grant select, insert, update on public.amazon_connect_links to authenticated;
 grant select, insert, update, delete on public.amazon_connect_links to service_role;
 
+-- Supabase hands signed-out visitors and signed-in people every permission on every table by default and
+-- leaves the row rules to hold the line. The rules do hold (a signed-out visitor reads nothing), but there
+-- is no reason to lean on them alone: take away what nobody needs.
+--   Signed-out visitors: no table at all. The pages they can open are served by the server or invite_preview().
+--   Signed-in people: never the Amazon connections table (it holds the encrypted tokens; only the server
+--   reads it), and never truncate, references or trigger on anything.
+revoke all on all tables in schema public from anon;
+revoke all on public.amazon_connections from authenticated;
+revoke truncate, references, trigger on all tables in schema public from authenticated;
+-- and tables added later do not get handed to signed-out visitors either
+alter default privileges for role postgres in schema public revoke all on tables from anon;
+
 -- Supabase lets signed-out visitors call every function in public by default. Take that away:
 -- the only thing a signed-out visitor may call is the invite preview on the join page.
 revoke execute on function

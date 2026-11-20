@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getBrand, getMe } from "@/lib/data";
 import { type AmazonApp, amazonConfigured, appConfigured, asApp, encrypt, exchangeCode, findAdvertisers, finishConnection, regionFor } from "@/lib/amazon";
 import { lookupConnectLink, noteConnectLinkError, spendConnectLink } from "@/lib/connectlinks";
+import { flashQuery } from "@/lib/flash";
 import { getOrigin } from "@/lib/origin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { supabaseConfigured } from "@/lib/supabase/server";
@@ -32,7 +33,7 @@ export async function GET(request: Request) {
 
   const back = saved.back?.startsWith("/app") ? saved.back : "/app";
   const to = (key: "ok" | "error", msg: string) => {
-    const res = NextResponse.redirect(`${origin}${back}${back.includes("?") ? "&" : "?"}${key}=${encodeURIComponent(msg)}`);
+    const res = NextResponse.redirect(`${origin}${back}${back.includes("?") ? "&" : "?"}${flashQuery(key, msg)}`);
     res.cookies.delete({ name: "amz_state", path: "/api/amazon" });
     return res;
   };

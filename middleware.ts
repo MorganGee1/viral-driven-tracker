@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { flashAllowed } from "@/lib/flash-edge";
 import { updateSession } from "@/lib/supabase/middleware";
 import { SITE } from "@/lib/site";
 
@@ -21,6 +22,13 @@ export async function middleware(request: NextRequest) {
   const moved = moveToRealAddress(request);
   if (moved) return moved;
   const path = request.nextUrl.pathname;
+  // The bars at the top of an app page take their text from the address. Only show text the app itself
+  // signed: anything else (a link someone wrote by hand) loses its message before the page is built.
+  if (request.method === "GET" && path.startsWith("/app") && !(await flashAllowed(request.nextUrl.searchParams))) {
+    const clean = request.nextUrl.clone();
+    for (const k of ["ok", "error", "sig"]) clean.searchParams.delete(k);
+    return NextResponse.redirect(clean, 307);
+  }
   const needsSession = path.startsWith("/app") || path === "/login" || path.startsWith("/join");
   return needsSession ? updateSession(request) : NextResponse.next();
 }
