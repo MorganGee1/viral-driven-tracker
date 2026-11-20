@@ -124,7 +124,7 @@ export default async function Earnings({ params, searchParams }: { params: Promi
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {(Object.keys(METRICS) as Metric[]).map((m) => (
           <Link key={m} href={query({ metric: m })} scroll={false}
-            className={`card p-4 transition-colors hover:border-line-2 ${m === metric ? "border-accent" : ""}`}>
+            className={`card p-4 transition-colors hover:border-line-2 ${m === metric ? "border-ink/60" : ""}`}>
             <div className="label">{METRICS[m]}</div>
             <div className="big-number mt-1 text-2xl font-medium">{value(m)}</div>
           </Link>

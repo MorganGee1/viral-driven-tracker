@@ -209,3 +209,74 @@ export function daySeries(from: string, to: string): string[] {
   for (let d = from; d <= to && out.length < 800; d = addDays(d, 1)) out.push(d);
   return out;
 }
+
+// ---------- overview: comparisons and chart scales ----------
+const dayDiff = (a: string, b: string) => Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86400000);
+
+/** "1 to 19 Oct", or "28 Sep to 4 Oct" when the range crosses a month. */
+export function rangeLabel(from: string, to: string) {
+  if (from === to) return fmtDay(from);
+  return from.slice(0, 7) === to.slice(0, 7) ? `${Number(from.slice(8))} to ${fmtDay(to)}` : `${fmtDay(from)} to ${fmtDay(to)}`;
+}
+
+/**
+ * The dates a period is compared with, or null when there is nothing sensible to compare (all time).
+ * A month is compared with the same days of the month before: 1 to 19 Nov against 1 to 19 Oct.
+ * Anything else is compared with the same number of days straight before it.
+ * `effectiveTo` is the last day we actually hold numbers for inside the period, so a month in progress
+ * is never compared against more days than it has had.
+ */
+export function previousWindow(period: Period, effectiveTo: string): { from: string; to: string; label: string } | null {
+  if (!period.from || effectiveTo < period.from) return null;
+  const n = dayDiff(period.from, effectiveTo) + 1;
+  let from: string, to: string;
+  if (period.key === "month" || /^\d{4}-\d{2}$/.test(period.key)) {
+    const [y, m] = period.from.split("-").map(Number);
+    from = new Date(Date.UTC(y, m - 2, 1)).toISOString().slice(0, 10);
+    const last = new Date(Date.UTC(y, m - 1, 0)).toISOString().slice(0, 10);
+    to = addDays(from, n - 1);
+    if (to > last) to = last;
+  } else {
+    to = addDays(period.from, -1);
+    from = addDays(period.from, -n);
+  }
+  return { from, to, label: rangeLabel(from, to) };
+}
+
+/** Change against an earlier number, as a whole percent. Null when there was nothing before to compare with. */
+export function pctChange(now: number, before: number): number | null {
+  if (!(before > 0)) return null;
+  return ((now - before) / before) * 100;
+}
+
+/** A round number at or above v, for the top of a chart: 31 becomes 40, 1,480 becomes 1,500. */
+export function niceMax(v: number): number {
+  if (!(v > 0)) return 1;
+  const exp = 10 ** Math.floor(Math.log10(v));
+  const f = v / exp;
+  const nice = f <= 1 ? 1 : f <= 1.5 ? 1.5 : f <= 2 ? 2 : f <= 3 ? 3 : f <= 4 ? 4 : f <= 5 ? 5 : f <= 6 ? 6 : f <= 8 ? 8 : 10;
+  return nice * exp;
+}
+
+/** Money for a chart axis: £40, £1.5K, $120K. */
+export function moneyShort(n: number, cur = "USD") {
+  const big = Math.abs(n) >= 1000;
+  return new Intl.NumberFormat("en-US", {
+    style: "currency", currency: cur, notation: big ? "compact" : "standard",
+    minimumFractionDigits: big || Number.isInteger(n) ? 0 : 2, maximumFractionDigits: big ? 1 : Number.isInteger(n) ? 0 : 2,
+  }).format(n || 0);
+}
+
+/** Money split into its symbol, whole part and pence, so a headline can set each at its own size. */
+export function moneyParts(n: number, cur = "USD"): { symbol: string; whole: string; fraction: string } {
+  const parts = new Intl.NumberFormat("en-US", { style: "currency", currency: cur, minimumFractionDigits: 2, maximumFractionDigits: 2 }).formatToParts(n || 0);
+  const pick = (types: string[]) => parts.filter((p) => types.includes(p.type)).map((p) => p.value).join("");
+  return { symbol: pick(["minusSign", "currency"]), whole: pick(["integer", "group"]), fraction: pick(["fraction"]) };
+}
+
+/** "Facebook bio", "Instagram ManyChat": where a link sits, said the way the team says it. */
+export function sourceLabel(platform: Platform, placement: Placement) {
+  const place = placement === "manychat" ? "ManyChat" : PLACEMENTS[placement].toLowerCase();
+  if (platform === "other") return placement === "other" ? "Other" : place.charAt(0).toUpperCase() + place.slice(1);
+  return `${PLATFORMS[platform]} ${place}`;
+}

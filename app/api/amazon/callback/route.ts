@@ -41,12 +41,12 @@ export async function GET(request: Request) {
   if (!amazonConfigured()) return to("error", "The Amazon Ads API is not set up on this site yet.");
   if (url.searchParams.get("error")) return to("error", "Amazon access was not approved, so nothing was connected.");
   const code = url.searchParams.get("code");
-  if (!code || !saved.state || !saved.brandId || url.searchParams.get("state") !== saved.state) return to("error", "That Amazon sign-in could not be verified. Start again from Settings.");
+  if (!code || !saved.state || !saved.brandId || url.searchParams.get("state") !== saved.state) return to("error", "That Amazon sign-in could not be verified. Start again from the brand page.");
   const brand = await getBrand(saved.brandId);
   if (!brand) return to("error", "Brand not found.");
 
   const app = appOf(saved, brand);
-  if (!appConfigured(app)) return to("error", "The keys for that Amazon app are not on this site. Start again from Settings.");
+  if (!appConfigured(app)) return to("error", "The keys for that Amazon app are not on this site. Start again from the brand page.");
 
   try {
     const region = regionFor(brand.marketplace);
@@ -74,7 +74,7 @@ export async function GET(request: Request) {
  * The client came through a connect link. Everything is checked again here, because this is the step
  * that writes: the link must still be live, and the brand comes from the link, never from the browser.
  * The client is sent back to the link's own page, which only ever shows a fixed message. The real
- * reason for a failure is kept on the link for the team to read in Settings.
+ * reason for a failure is kept on the link for the team to read on the brand page.
  */
 async function fromClientLink(origin: string, url: URL, linkCode: string, saved: Saved) {
   const state = saved.state;
@@ -112,7 +112,7 @@ async function fromClientLink(origin: string, url: URL, linkCode: string, saved:
     // The client's part is done the moment the access is stored, so the link is spent here.
     await spendConnectLink(link.id);
     if (candidates.length === 1) {
-      // If this last step trips, the team finishes it from Settings (it shows the advertiser to pick). The client is still done.
+      // If this last step trips, the team finishes it from the brand page (it shows the advertiser to pick). The client is still done.
       try { await finishConnection(app, brand.id, candidates[0], region, tokens.access_token!); }
       catch (e) { await noteConnectLinkError(link.id, `Access is stored, but setting up tags did not finish: ${e instanceof Error ? e.message : "unknown error"}`); }
     }

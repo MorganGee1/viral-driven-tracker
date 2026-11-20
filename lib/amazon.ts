@@ -201,7 +201,7 @@ export async function syncBrand(brandId: string): Promise<SyncResult> {
   };
   const { data: conn } = await db.from("amazon_connections").select("app, region, refresh_token_enc, profile_id, advertiser_id").eq("brand_id", brandId).maybeSingle();
   if (!conn) return { ok: false, message: "This brand is not connected to Amazon.", rows: 0, links: 0 };
-  if (!conn.profile_id || !conn.advertiser_id) return finish({ ok: false, message: "Pick which Amazon Attribution advertiser this brand is, in Settings.", rows: 0, links: 0 });
+  if (!conn.profile_id || !conn.advertiser_id) return finish({ ok: false, message: "Pick which Amazon Attribution advertiser this brand is, on the brand page.", rows: 0, links: 0 });
   try {
     const region = conn.region as Region;
     const app = asApp(conn.app); // the app this brand's token came from

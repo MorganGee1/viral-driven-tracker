@@ -4,19 +4,19 @@ import {
   type Profile,
 } from "@/lib/data";
 import { AutoForm } from "@/components/app/AutoForm";
-import { DayChart, SplitBar } from "@/components/app/Charts";
 import { Flash } from "@/components/app/Flash";
 import { LinkRow } from "@/components/app/LinkRow";
 import { NewLinkForm } from "@/components/app/NewLinkForm";
+import { OverviewView } from "@/components/app/Overview";
 import { PeriodSelect } from "@/components/app/PeriodSelect";
 import { CopyButton } from "@/components/app/CopyButton";
+import type { TrendPoint } from "@/components/app/TrendChart";
+import { buildOverview } from "@/lib/overview";
 import {
-  ZERO, conversion, copyUrl, currencyFor, daySeries, fmtDay, isTeamRole, money, num, resolvePeriod, share, sumTotals, addDays, todayLA,
+  ZERO, addDays, copyUrl, currencyFor, daySeries, fmtDay, isTeamRole, money, moneyShort, niceMax, num, previousWindow, resolvePeriod, sumTotals, todayLA,
 } from "@/lib/util";
 
 type SP = { period?: string; from?: string; to?: string; creator?: string; ok?: string; error?: string; new?: string };
-// The top creator gets the accent. Everyone after that gets a quieter ink, so the leader reads first.
-const COLORS = ["bg-accent", "bg-ink", "bg-violet", "bg-amber", "bg-sky", "bg-ink-3"];
 
 export default async function ProductPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<SP> }) {
   const { id } = await params;
@@ -57,8 +57,8 @@ async function CreatorLinks({ id, sp, me }: { id: string; sp: SP; me: Profile })
     <div>
       <Flash ok={sp.ok} error={sp.error} />
       {fresh && (
-        <div className="mb-5 rounded-lg border border-accent/30 bg-accent/5 p-4">
-          <div className="text-sm font-medium text-accent">Link ready: {fresh.name}</div>
+        <div className="mb-5 rounded-lg border border-sky/30 bg-sky/5 p-4">
+          <div className="text-sm font-medium text-sky">Link ready: {fresh.name}</div>
           <div className="mt-2 flex flex-wrap items-center gap-3">
             <div className="min-w-0 flex-1 truncate rounded-lg bg-bg px-3 py-2 font-mono text-xs text-ink-2">{urlOf(fresh)}</div>
             <CopyButton text={urlOf(fresh)} />
@@ -127,110 +127,73 @@ async function TeamOverview({ id, sp }: { id: string; sp: SP }) {
     getBonus({ product: id, from: period.from, to: period.to }),
     getDataThrough({ product: id }),
   ]);
-  const creatorIds = [...new Set([...members.map((m) => m.creator_id), ...links.map((l) => l.owner_id)])];
+  const memberIds = members.map((m) => m.creator_id);
+  const creatorIds = [...new Set([...memberIds, ...links.map((l) => l.owner_id)])];
   const profiles = await getProfilesByIds(creatorIds);
   const chosen = sp.creator && creatorIds.includes(sp.creator) ? sp.creator : null;
-  const scoped = chosen ? links.filter((l) => l.owner_id === chosen) : links;
-  const t = sumTotals(scoped.map((l) => totals.get(l.id) ?? ZERO));
+  const scopedIds = chosen ? links.filter((l) => l.owner_id === chosen).map((l) => l.id) : null;
 
-  // each creator's share of sales (always across everyone, so the bar keeps its meaning when one is picked)
-  const byCreator = new Map<string, number>();
-  for (const l of links) byCreator.set(l.owner_id, (byCreator.get(l.owner_id) ?? 0) + (totals.get(l.id)?.sales ?? 0));
-  const ranked = [...byCreator.entries()].filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
-  const allSales = ranked.reduce((s, [, v]) => s + v, 0);
-  const top = ranked.slice(0, 5);
-  const rest = ranked.slice(5).reduce((s, [, v]) => s + v, 0);
-  const parts = [
-    ...top.map(([cid, v], i) => ({ key: cid, value: v, color: COLORS[i], title: `${profiles.get(cid)?.username ?? "Unknown"}: ${money(v, cur)}` })),
-    ...(rest > 0 ? [{ key: "rest", value: rest, color: COLORS[5], title: `Everyone else: ${money(rest, cur)}` }] : []),
-  ];
-
-  // daily chart: the chosen dates, or the last 90 days when "all time" is picked
+  // the chart covers the chosen dates (the last 90 days for "all time"), stopping at the last day we hold numbers for
   const today = todayLA();
   const chartFrom = period.from ?? addDays(today, -89);
   const periodEnd = period.to && period.to < today ? period.to : today;
   const chartTo = through && through >= chartFrom && through < periodEnd ? through : periodEnd;
-  const daily = await getDailyTotals({ product: id, from: chartFrom, to: chartTo }, chosen ? scoped.map((l) => l.id) : null);
+  // what these dates are compared with: the same days of the month before, or the same number of days straight before
+  const prev = previousWindow(period, chartTo);
+  const [daily, beforeTotals, beforeDaily] = await Promise.all([
+    getDailyTotals({ product: id, from: chartFrom, to: chartTo }, scopedIds),
+    prev ? getLinkTotals({ product: id, from: prev.from, to: prev.to }) : null,
+    prev ? getDailyTotals({ product: id, from: prev.from, to: prev.to }, scopedIds) : null,
+  ]);
+
+  const names = new Map([...profiles.values()].map((p) => [p.id, p.username]));
+  const o = buildOverview({ links, totals, before: beforeTotals, names, memberIds, chosen });
+  // only compare when the earlier dates actually had something in them
+  const comparing = !!prev && !!o.before && (o.before.sales > 0 || o.before.clicks > 0);
+
   const byDay = new Map(daily.map((d) => [d.day, d]));
-  const days = daySeries(chartFrom, chartTo);
-  const names = creatorIds.map((cid) => profiles.get(cid)).filter((p): p is Profile => !!p).sort((a, b) => a.username.localeCompare(b.username));
+  const beforeByDay = new Map((beforeDaily ?? []).map((d) => [d.day, d]));
+  const points: TrendPoint[] = daySeries(chartFrom, chartTo).map((day, i) => {
+    const d = byDay.get(day);
+    const bDay = comparing && prev && addDays(prev.from, i) <= prev.to ? addDays(prev.from, i) : null;
+    const before = bDay ? beforeByDay.get(bDay)?.sales ?? 0 : null;
+    const purchases = d?.purchases ?? 0;
+    return {
+      day, label: fmtDay(day), value: d?.sales ?? 0, text: money(d?.sales ?? 0, cur),
+      sub: `${num(purchases)} ${purchases === 1 ? "purchase" : "purchases"}, ${num(d?.clicks ?? 0)} ${d?.clicks === 1 ? "click" : "clicks"}`,
+      before, beforeText: bDay && before !== null ? `${fmtDay(bDay)}: ${money(before, cur)}` : null,
+    };
+  });
+  const max = niceMax(Math.max(0, ...points.map((p) => Math.max(p.value, p.before ?? 0))));
+  const heading = period.key === "month" ? "Sales this month" : period.key === "30d" ? "Sales in the last 30 days" : period.key === "all" ? "Sales, all time"
+    : period.key === "custom" ? `Sales, ${period.label}` : `Sales in ${period.label}`;
+  const keep = period.key === "custom" ? `from=${period.from}&to=${period.to}` : period.key !== "month" ? `period=${period.key}` : "";
+  const people = creatorIds.map((cid) => profiles.get(cid)).filter((p): p is Profile => !!p).sort((a, b) => a.username.localeCompare(b.username));
 
   return (
-    <div className="space-y-4">
+    <>
       <Flash ok={sp.ok} error={sp.error} />
-      <AutoForm className="flex flex-wrap items-end gap-3">
-        <PeriodSelect period={period} withDates from={sp.from} to={sp.to} />
-        <label className="block">
-          <span className="label mb-1 block">Creator</span>
-          <select name="creator" defaultValue={chosen ?? ""} className="select min-w-44 py-1.5">
-            <option value="">All creators</option>
-            {names.map((p) => <option key={p.id} value={p.id}>{p.username}</option>)}
-          </select>
-        </label>
-        <span className="ml-auto self-center font-mono text-xs text-ink-3">
-          {through ? `Data through ${fmtDay(through, { day: "numeric", month: "short", year: "numeric" })} · Los Angeles days` : "No sales data yet"}
-        </span>
-      </AutoForm>
-
-      <div className="card grid grid-cols-1 gap-6 p-6 md:grid-cols-[1.3fr_1fr] md:p-8">
-        <div>
-          <div className="label">Total sales · {period.label.toLowerCase()} · {chosen ? profiles.get(chosen)?.username : `${creatorIds.length} creators`}</div>
-          <div className="big-number mt-2 text-5xl font-medium tracking-[-0.02em] md:text-7xl">{money(t.sales, cur)}</div>
-          <div className="mt-2 font-mono text-xs text-ink-3">Includes brand halo</div>
-          {!chosen && bonus > 0 && (
-            <div className="mt-4 flex max-w-sm items-baseline gap-2 font-mono text-xs">
-              <span className="shrink-0 text-ink-2">Brand Referral Bonus · team only</span>
-              <span className="leader" />
-              <span className="num shrink-0 text-ink">{money(bonus, cur)}</span>
-            </div>
-          )}
-        </div>
-        <div className="grid grid-cols-2 gap-3 self-end">
-          {([["Purchases", num(t.purchases)], ["Units", num(t.units)], ["Clicks", num(t.clicks)], ["Conversion", conversion(t.purchases, t.clicks)]] as const).map(([l, v]) => (
-            <div key={l} className="rounded-lg border border-line bg-panel-2 p-4">
-              <div className="big-number text-2xl font-medium">{v}</div>
-              <div className="label mt-1">{l}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="card p-6">
-        <div className="label">Each creator&apos;s share of sales · {period.label.toLowerCase()}</div>
-        {ranked.length === 0 ? (
-          <p className="mt-3 font-mono text-xs text-ink-3">No sales in these dates yet.</p>
-        ) : (
-          <>
-            <div className="mt-4"><SplitBar parts={parts} /></div>
-            <div className="mt-4 grid grid-cols-1 gap-x-8 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
-              {top.map(([cid, v], i) => (
-                <div key={cid} className="flex items-baseline gap-2 text-sm">
-                  <span className={`h-2 w-2 shrink-0 self-center rounded-sm ${COLORS[i]}`} />
-                  <span className="truncate">{profiles.get(cid)?.username ?? "Unknown"}</span>
-                  <span className="leader" />
-                  <span className="num shrink-0 font-mono text-xs text-ink">{money(v, cur)}</span>
-                  <span className="num w-12 shrink-0 text-right font-mono text-xs text-ink-3">{share(v, allSales)}</span>
-                </div>
-              ))}
-              {rest > 0 && (
-                <div className="flex items-baseline gap-2 text-sm">
-                  <span className={`h-2 w-2 shrink-0 self-center rounded-sm ${COLORS[5]}`} />
-                  <span className="truncate">{ranked.length - 5} more creators</span>
-                  <span className="leader" />
-                  <span className="num shrink-0 font-mono text-xs text-ink">{money(rest, cur)}</span>
-                  <span className="num w-12 shrink-0 text-right font-mono text-xs text-ink-3">{share(rest, allSales)}</span>
-                </div>
-              )}
-            </div>
-          </>
-        )}
-      </div>
-
-      <div className="card p-6">
-        <div className="label mb-3">Sales and purchases per day{period.from ? "" : " · last 90 days"}</div>
-        <DayChart days={days} bar={days.map((d) => byDay.get(d)?.sales ?? 0)} line={days.map((d) => byDay.get(d)?.purchases ?? 0)}
-          barLabel="Sales" lineLabel="Purchases" format={(n) => money(n, cur)} />
-      </div>
-    </div>
+      <OverviewView
+        productId={id} cur={cur} heading={heading} compare={comparing && prev ? prev.label : null} through={through}
+        chosen={chosen ? { id: chosen, name: names.get(chosen) ?? "Unknown" } : null} keep={keep} o={o} bonus={chosen ? 0 : bonus}
+        legend={period.from ? "Sales per day" : "Sales per day, last 90 days"}
+        chart={{
+          points, max, ticks: [{ at: max / 2, label: moneyShort(max / 2, cur) }, { at: max, label: moneyShort(max, cur) }],
+          summary: `${heading}: ${money(o.total.sales, cur)} across ${points.length} ${points.length === 1 ? "day" : "days"}${period.from ? "" : ", last 90 days shown"}. Use the arrow keys to read each day.`,
+        }}
+        filters={
+          <AutoForm className="flex flex-wrap items-center gap-2">
+            <PeriodSelect period={period} withDates from={sp.from} to={sp.to} compact />
+            <label className="block">
+              <span className="sr-only">Creator</span>
+              <select name="creator" defaultValue={chosen ?? ""} className="select min-w-40 py-1.5" title="Creator">
+                <option value="">All creators</option>
+                {people.map((p) => <option key={p.id} value={p.id}>{p.username}</option>)}
+              </select>
+            </label>
+          </AutoForm>
+        }
+      />
+    </>
   );
 }

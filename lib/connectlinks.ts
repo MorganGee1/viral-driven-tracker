@@ -48,7 +48,7 @@ export async function spendConnectLink(id: string) {
   await createAdminClient().from("amazon_connect_links").update({ used_at: new Date().toISOString(), last_error: null }).eq("id", id);
 }
 
-/** Keeps the reason a try through the link failed, so the team can read it in Settings. The client only sees a plain message. */
+/** Keeps the reason a try through the link failed, so the team can read it on the brand page. The client only sees a plain message. */
 export async function noteConnectLinkError(id: string, message: string) {
   await createAdminClient().from("amazon_connect_links").update({ last_error: message.slice(0, 500) }).eq("id", id);
 }

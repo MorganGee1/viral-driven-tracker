@@ -114,7 +114,7 @@ export default async function Creators({ params, searchParams }: { params: Promi
                 <div className="label mb-2">Accounts · {r.linkCount} live {r.linkCount === 1 ? "link" : "links"}</div>
                 <div className="text-sm text-ink-2">{r.accounts.length ? r.accounts.join(", ") : "No links yet"}</div>
                 <div className="mt-3 font-mono text-xs text-ink-3">Discord ID {r.p?.discord_id ?? "unknown"}</div>
-                <Link href={`/app/products/${id}/earnings?creator=${r.cid}&period=${period.key}`} className="mt-3 inline-block text-sm text-accent hover:underline">Open in Earnings</Link>
+                <Link href={`/app/products/${id}/earnings?creator=${r.cid}&period=${period.key}`} className="mt-3 inline-block text-sm text-ink-2 underline underline-offset-4 hover:text-ink">Open in Earnings</Link>
               </div>
             </div>
           </details>

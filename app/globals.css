@@ -1,9 +1,11 @@
 @import "tailwindcss";
 
 /*
-  Direction: dark, with one purple accent. The page is a near-black tinted a little toward violet,
-  text is off-white, and purple only shows up where it means something (a figure, a share, a state).
-  No gradients and no glows. The one bright object is the paper receipt in the hero.
+  Direction: dark, with one purple accent, used sparingly. Text is off-white on graphite.
+  In the signed-in app the accent is kept for one thing per page (the sales line on an Overview) and
+  for small states (a live pill, keyboard focus). Bars, tabs and shares are white and grey.
+  Teal and rose only ever mean up and down. No gradients and no glows.
+  The one bright object on the public site is the paper receipt in the hero.
 */
 @theme {
   /* dark ramp, tinted slightly toward the accent */
@@ -19,7 +21,7 @@
   /* the one accent: purple. The lighter shade is for text and small marks, the deeper one for large fills. */
   --color-accent: #a78bfa;
   --color-accent-2: #7c3aed;
-  /* states, and the quieter colours used when a chart has to tell series apart */
+  /* states: teal is good (connected, saved, up), amber needs a look, rose is wrong or down. The blue is a spare series colour. */
   --color-rose: #e5686a;
   --color-amber: #d9a441;
   --color-violet: #6b9bd6;
@@ -71,7 +73,7 @@
 
   /* Tags are quiet mono text in a hairline box, never a glowing pill. */
   .pill { @apply inline-flex items-center rounded border px-2 font-mono text-xs leading-5; }
-  .pill-live { @apply inline-flex items-center rounded border px-2 font-mono text-xs leading-5 border-accent/30 text-accent; }
+  .pill-live { @apply inline-flex items-center rounded border px-2 font-mono text-xs leading-5 border-sky/40 text-sky; }
   .pill-muted { @apply inline-flex items-center rounded border px-2 font-mono text-xs leading-5 border-line-2 text-ink-3; }
 
   .big-number { font-variant-numeric: tabular-nums; }

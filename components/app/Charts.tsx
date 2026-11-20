@@ -1,6 +1,6 @@
 import { fmtDay, num } from "@/lib/util";
 
-/** Bars for one number per day, with an optional line for a second number on its own scale. */
+/** Bars for one number per day, with an optional line for a second number on its own scale. Neutral on purpose: the accent is kept for the sales line on a product's Overview. */
 export function DayChart({ days, bar, line, barLabel, lineLabel, format = num, height = 220 }: {
   days: string[]; bar: number[]; line?: number[]; barLabel: string; lineLabel?: string;
   format?: (n: number) => string; height?: number;
@@ -17,13 +17,13 @@ export function DayChart({ days, bar, line, barLabel, lineLabel, format = num, h
   return (
     <div>
       <div className="mb-2 flex flex-wrap items-center gap-x-5 gap-y-1 font-mono text-xs text-ink-3">
-        <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-sm bg-accent-2" />{barLabel} · peak {format(Math.max(...bar, 0))}</span>
+        <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-sm bg-ink/30" />{barLabel} · peak {format(Math.max(...bar, 0))}</span>
         {line && lineLabel && <span className="flex items-center gap-2"><span className="h-0.5 w-4 bg-ink" />{lineLabel} · peak {num(Math.max(...line, 0))}</span>}
       </div>
       <svg viewBox={`0 0 ${w} ${h}`} className="w-full" role="img" aria-label={`${barLabel} per day`}>
         <line x1="0" x2={w} y1={h - padB} y2={h - padB} className="stroke-line-2" />
         {bar.map((v, i) => (
-          <rect key={days[i]} x={(i + 0.5) * slot - bw / 2} y={y(v, maxBar)} width={bw} height={Math.max(0, h - padB - y(v, maxBar))} rx="2" className="fill-accent-2">
+          <rect key={days[i]} x={(i + 0.5) * slot - bw / 2} y={y(v, maxBar)} width={bw} height={Math.max(0, h - padB - y(v, maxBar))} rx="2" className="fill-ink/30">
             <title>{`${fmtDay(days[i])}: ${format(v)} ${barLabel.toLowerCase()}${line && lineLabel ? `, ${num(line[i])} ${lineLabel.toLowerCase()}` : ""}`}</title>
           </rect>
         ))}

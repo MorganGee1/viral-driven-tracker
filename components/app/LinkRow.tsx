@@ -14,7 +14,7 @@ export function LinkRow({ link, url, plainUrl, deepWaiting, pageName, totals, cu
 }) {
   const archived = !!link.archived_at;
   return (
-    <div className={`card min-w-0 p-4 ${fresh ? "border-accent" : ""} ${archived ? "opacity-60" : ""}`}>
+    <div className={`card min-w-0 p-4 ${fresh ? "border-sky/60" : ""} ${archived ? "opacity-60" : ""}`}>
       <div className="flex flex-wrap items-start gap-x-4 gap-y-3">
         <div className="min-w-0 flex-1 basis-52">
           <div className="flex flex-wrap items-center gap-2">

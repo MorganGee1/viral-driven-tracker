@@ -11,7 +11,7 @@ const cookie = (origin: string) => ({ httpOnly: true, sameSite: "lax" as const, 
 
 /**
  * Sends someone to Login with Amazon to approve access for a brand. Two ways in:
- *   ?brand=…  a signed-in team member pressed "Connect Amazon Ads" in Settings
+ *   ?brand=…  a signed-in team member pressed "Connect Amazon Ads" on the brand page
  *   ?link=…   a client opened the connect link the team sent them. No tracker sign-in. The link is the permission.
  *
  * The brand decides which of the two Login with Amazon apps is used (brands.amazon_app). The app is kept

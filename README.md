@@ -87,7 +87,7 @@ The code for this is in the repo and has been run end to end against a local sta
 Expect a short fix-up the first time it meets real data (most likely the field names in report rows). `lib/amazon.ts` is the only file that talks to Amazon.
 
 What it does once switched on:
-- Settings > Amazon connection > **Connect Amazon Ads**. The account owner signs in with Login with Amazon and approves access.
+- Brand page > Amazon connection > **Connect Amazon Ads**. The account owner signs in with Login with Amazon and approves access. One connection covers every product of the brand, which is why it sits on the brand page and not in a product's Settings.
 - The tracker finds the brand's Amazon Attribution advertiser (asks you to pick if the login sees several), fetches the tag template, and tags every link that was waiting.
 - Every new link is tagged the moment a creator makes it. Each link is its own ad group in Amazon, so sales and Brand Referral Bonus come back per link.
 - Every night (and on **Sync now**) it pulls the last 31 days and replaces those days.
@@ -109,9 +109,9 @@ Until those keys exist, the Connect button does not show and everything works on
 
 When someone outside the team holds a brand's Amazon Ads login, send them a link instead of adding them to the tracker.
 
-1. Product > Settings > Amazon connection > **Make a connect link** > Copy.
+1. Brand page > Amazon connection > **Make a connect link** > Copy.
 2. Send it to whoever holds that brand's Amazon login. They open it, press **Continue with Amazon**, sign in and approve.
-3. The brand is now connected. If their login sees more than one Amazon Attribution advertiser, Settings asks you to pick.
+3. The brand is now connected. If their login sees more than one Amazon Attribution advertiser, the brand page asks you to pick.
 
 What the client sees: one page with the brand's name and country and what the tracker does with the access. No Discord, no tracker account, nothing of the app.
 
@@ -120,7 +120,7 @@ Rules:
 - A link works once, lasts 14 days, and can be switched off. Making a new link switches the old one off.
 - Only the team can make, see or switch off links (enforced in the database). Creators cannot.
 - The public page and the Amazon routes look the link up on the server by its code. The link is the only permission, and the brand always comes from the link, never from the browser.
-- If a try through the link fails, the client gets a plain message and the real reason shows in Settings under the link.
+- If a try through the link fails, the client gets a plain message and the real reason shows on the brand page under the link.
 - Needs `supabase/schema.sql` run again (it adds the `amazon_connect_links` table).
 
 One thing to know before sending it to a client: Amazon's approval screen shows the name of the Login with Amazon app the brand connects through. Client brands go through the partner app (next section), which is the one Amazon approved for connecting other companies' accounts.
@@ -134,11 +134,11 @@ The site can hold the keys of two Login with Amazon apps at once. Every brand co
 | Own-brand app (`direct`) | `AMAZON_CLIENT_ID`, `AMAZON_CLIENT_SECRET` | MyCompanion. The app Amazon approved for the company's own brand. |
 | Partner app (`partner`) | `AMAZON_PARTNER_CLIENT_ID`, `AMAZON_PARTNER_CLIENT_SECRET` | Every other brand, and every brand added from now on. The app Amazon approved for client accounts. |
 
-- `brands.amazon_app` says which app a brand connects through. New brands get `partner`. The product's Settings page shows which one it is.
+- `brands.amazon_app` says which app a brand connects through. New brands get `partner`. The Amazon connection box on the brand page shows which one it is.
 - `amazon_connections.app` records which app a stored connection came from. Syncs always use that app's keys, because Amazon only takes a token back from the app it was given to.
-- There is no fallback between the two. If a brand's app has no keys on the site, its Connect button and connect link do not show, and Settings names the keys that are missing.
+- There is no fallback between the two. If a brand's app has no keys on the site, its Connect button and connect link do not show, and the brand page names the keys that are missing.
 - Both apps need the allowed return URL `https://app.viraldrivenmedia.com/api/amazon/callback` in their Login with Amazon security profile.
-- To move a brand to the other app: `update public.brands set amazon_app = 'direct' where name = '...';` (or `'partner'`), then press Reconnect in Settings. The old connection keeps syncing until then.
+- To move a brand to the other app: `update public.brands set amazon_app = 'direct' where name = '...';` (or `'partner'`), then press Reconnect on the brand page. The old connection keeps syncing until then.
 
 ## Deep links (LinkTwin)
 
@@ -158,4 +158,6 @@ What happens after that:
 
 ## Design
 
-Dark, with one purple accent. The page is a near-black tinted slightly toward violet, text is off-white, and purple only appears where it means something. No gradients or glows. Type is IBM Plex Sans with Plex Mono for figures, and names are joined to their numbers by dotted receipt lines. The one bright object is the paper receipt in the hero. The design pass used the unslop skill by Damir Sokolovsky ([@heydamir](https://x.com/heydamir), https://github.com/heydamir/unslop, CC BY 4.0).
+Dark, with one purple accent, used sparingly. The signed-in app is graphite and off-white. The accent is kept for one thing per page (the sales line on a product's Overview) and the logo. Bars, shares and the active tab are white and grey. Teal means good (connected, saved, up), amber needs a look, rose is wrong or down. No gradients or glows. Type is IBM Plex Sans with Plex Mono for figures, and names are joined to their numbers by dotted receipt lines. The one bright object is the paper receipt in the public hero. The design pass used the unslop skill by Damir Sokolovsky ([@heydamir](https://x.com/heydamir), https://github.com/heydamir/unslop, CC BY 4.0).
+
+A product's Overview answers three questions in order: how much was sold (the total, against the same days of the month before, with sales per day), where it came from (by placement and by platform), and who sold it (creators ranked, then the individual links). `lib/overview.ts` builds those numbers and has no database in it. `components/app/Overview.tsx` lays them out.

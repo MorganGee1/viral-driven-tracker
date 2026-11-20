@@ -66,10 +66,10 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ o
         <div className="card mt-8 p-8">
           <h2 className="text-xl font-medium">Set up your first brand</h2>
           <ol className="mt-4 space-y-2 text-sm leading-relaxed text-ink-2">
-            <li><span className="font-mono text-accent">1</span> &nbsp;Add a brand below.</li>
-            <li><span className="font-mono text-accent">2</span> &nbsp;Add a product under it, with the Amazon page its links point to.</li>
-            <li><span className="font-mono text-accent">3</span> &nbsp;Create an invite link for the product and send it to your creators.</li>
-            <li><span className="font-mono text-accent">4</span> &nbsp;Creators sign in with Discord and make their own links. Sales show up per creator, account and placement.</li>
+            <li><span className="font-mono text-ink-3">1</span> &nbsp;Add a brand below.</li>
+            <li><span className="font-mono text-ink-3">2</span> &nbsp;Add a product under it, with the Amazon page its links point to.</li>
+            <li><span className="font-mono text-ink-3">3</span> &nbsp;Create an invite link for the product and send it to your creators.</li>
+            <li><span className="font-mono text-ink-3">4</span> &nbsp;Creators sign in with Discord and make their own links. Sales show up per creator, account and placement.</li>
           </ol>
         </div>
       )}

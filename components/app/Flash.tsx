@@ -2,7 +2,7 @@
 export function Flash({ ok, error }: { ok?: string; error?: string }) {
   if (!ok && !error) return null;
   return (
-    <div role="status" className={`mb-5 rounded-lg border px-4 py-3 text-sm ${error ? "border-rose/40 bg-rose/10 text-rose" : "border-accent/40 bg-accent/10 text-accent"}`}>
+    <div role="status" className={`mb-5 rounded-lg border px-4 py-3 text-sm ${error ? "border-rose/40 bg-rose/10 text-rose" : "border-sky/40 bg-sky/10 text-sky"}`}>
       {error ?? ok}
     </div>
   );

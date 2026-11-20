@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { getBonus, getBrand, getDailyTotals, getDataThrough, getMe, getNav, getProductTotals } from "@/lib/data";
+import { getAmazonStatus, getBonus, getBrand, getConnectLink, getDailyTotals, getDataThrough, getMe, getNav, getProductTotals } from "@/lib/data";
+import { appConfigured, asApp } from "@/lib/amazon";
+import { getOrigin } from "@/lib/origin";
 import { addProduct, updateBrand } from "@/lib/actions";
+import { AmazonConnection } from "@/components/app/AmazonConnection";
 import { Flash } from "@/components/app/Flash";
 import { DayChart } from "@/components/app/Charts";
 import { ZERO, conversion, currencyFor, daySeries, fmtDay, isTeamRole, money, num, resolvePeriod, share, sumTotals } from "@/lib/util";
@@ -18,12 +21,16 @@ export default async function BrandPage({ params, searchParams }: { params: Prom
   const month = resolvePeriod({});
   const d30 = resolvePeriod({ period: "30d" });
 
-  const [monthTotals, d30Totals, daily, bonus, through] = await Promise.all([
+  const [monthTotals, d30Totals, daily, bonus, through, amazon, connectLink, origin] = await Promise.all([
     getProductTotals(month.from, month.to),
     getProductTotals(d30.from, d30.to),
     getDailyTotals({ brand: id, from: d30.from, to: d30.to }),
     getBonus({ brand: id, from: month.from, to: month.to }),
     getDataThrough({ brand: id }),
+    getAmazonStatus(id),
+    // the connect link only matters when the app this brand connects through has its keys on the site
+    appConfigured(asApp(brand.amazon_app)) ? getConnectLink(id) : null,
+    getOrigin(),
   ]);
   const m = sumTotals(products.map((p) => monthTotals.get(p.id) ?? ZERO));
   const t30 = sumTotals(products.map((p) => d30Totals.get(p.id) ?? ZERO));
@@ -33,17 +40,52 @@ export default async function BrandPage({ params, searchParams }: { params: Prom
     (a.status === b.status ? (monthTotals.get(b.id)?.sales ?? 0) - (monthTotals.get(a.id)?.sales ?? 0) : a.status === "active" ? -1 : 1));
   const back = `/app/brands/${id}`;
 
+  // A brand that is not connected yet needs connecting before anything else, so that box leads the page.
+  // Once connected it moves below the numbers, with the rest of the brand's setup.
+  const connected = amazon.connected && !!amazon.advertiser_id;
+  const admin = (
+    <div className={`grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] ${connected ? "mt-8" : "mt-6"}`}>
+      <AmazonConnection brand={brand} amazon={amazon} connectLink={connectLink} origin={origin} back={back} />
+      <div className="space-y-4">
+      <form action={addProduct} className="card space-y-3 p-5">
+        <div className="label">Add a product</div>
+        <input type="hidden" name="brand_id" value={id} />
+        <input type="hidden" name="back" value={back} />
+        <input name="name" required maxLength={80} placeholder="Product name, e.g. Lash Serum" className="input" />
+        <input name="page_url" required placeholder="Amazon page, e.g. https://www.amazon.com/dp/B0XXXXXXXX" className="input" />
+        <input name="page_name" maxLength={80} placeholder="Name for that Amazon page (optional)" className="input" />
+        <button className="btn-primary w-full">Add product</button>
+        <p className="font-mono text-xs leading-relaxed text-ink-3">You can add more Amazon pages to a product later in its Settings.</p>
+      </form>
+      <form action={updateBrand} className="card space-y-3 p-5">
+        <div className="label">Brand details</div>
+        <input type="hidden" name="id" value={id} />
+        <input type="hidden" name="back" value={back} />
+        <input name="name" required maxLength={80} defaultValue={brand.name} className="input" aria-label="Brand name" />
+        <select name="marketplace" className="select" defaultValue={brand.marketplace} aria-label="Amazon marketplace">
+          {["US", "UK", "CA", "DE", "FR", "IT", "ES"].map((mk) => <option key={mk} value={mk}>{mk}</option>)}
+        </select>
+        <button className="btn-ghost w-full">Save brand</button>
+      </form>
+      </div>
+    </div>
+  );
+
   return (
     <div className="mx-auto max-w-6xl">
       <Flash ok={sp.ok} error={sp.error} />
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-3xl font-medium">{brand.name}</h1>
         <span className="pill-muted">{brand.marketplace}</span>
+        <a href="#amazon" className={connected || brand.tag_template ? "pill-live" : "pill border-amber/40 text-amber"}>
+          {connected ? "Amazon connected" : brand.tag_template ? "tags automatic" : "Amazon not connected"}
+        </a>
         <span className="ml-auto font-mono text-xs text-ink-3">
           {through ? `Data through ${fmtDay(through, { day: "numeric", month: "short", year: "numeric" })} · Los Angeles days` : "No sales data yet"}
         </span>
       </div>
 
+      {!connected && admin}
       <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="card p-6">
           <div className="label">Total sales · this month</div>
@@ -102,28 +144,7 @@ export default async function BrandPage({ params, searchParams }: { params: Prom
         })}
       </div>
 
-      <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
-        <form action={addProduct} className="card space-y-3 p-5">
-          <div className="label">Add a product</div>
-          <input type="hidden" name="brand_id" value={id} />
-          <input type="hidden" name="back" value={back} />
-          <input name="name" required maxLength={80} placeholder="Product name, e.g. Lash Serum" className="input" />
-          <input name="page_url" required placeholder="Amazon page, e.g. https://www.amazon.com/dp/B0XXXXXXXX" className="input" />
-          <input name="page_name" maxLength={80} placeholder="Name for that Amazon page (optional)" className="input" />
-          <button className="btn-primary w-full">Add product</button>
-          <p className="font-mono text-xs leading-relaxed text-ink-3">You can add more Amazon pages to a product later in its Settings.</p>
-        </form>
-        <form action={updateBrand} className="card space-y-3 p-5">
-          <div className="label">Brand details</div>
-          <input type="hidden" name="id" value={id} />
-          <input type="hidden" name="back" value={back} />
-          <input name="name" required maxLength={80} defaultValue={brand.name} className="input" aria-label="Brand name" />
-          <select name="marketplace" className="select" defaultValue={brand.marketplace} aria-label="Amazon marketplace">
-            {["US", "UK", "CA", "DE", "FR", "IT", "ES"].map((mk) => <option key={mk} value={mk}>{mk}</option>)}
-          </select>
-          <button className="btn-ghost w-full">Save brand</button>
-        </form>
-      </div>
+      {connected && admin}
     </div>
   );
 }
